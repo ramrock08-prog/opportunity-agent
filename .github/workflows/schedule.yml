@@ -2,8 +2,9 @@ name: Daily Hackathon Agent
 
 on:
   schedule:
-    - cron: '30 4 * * *'  # Runs at 4:30 AM UTC, which is 10:00 AM IST
-  workflow_dispatch: # This magical line lets us click a button to test it right now!
+    # This runs every 5 hours (at minute 0 of the hour)
+    - cron: '0 */5 * * *'
+  workflow_dispatch: # This still lets you run it manually anytime!
 
 jobs:
   run-agent:
