@@ -37,7 +37,7 @@ def process_with_ai(search_results):
     3. Format the results as a clean, professional HTML email. Use bullet points and bold text.
     Do not include any markdown formatting like ```html. Just output raw HTML.
     """
-    model = genai.GenerativeModel('gemini-1.5-flash')
+    model = genai.GenerativeModel('gemini-pro')
     response = model.generate_content(prompt)
     return response.text
 
