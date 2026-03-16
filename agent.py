@@ -43,9 +43,9 @@ def process_with_ai(search_results):
        - ONLY include them if registration is currently OPEN. Do not include closed events.
     
     3. Format the entire email as a clean, professional HTML. Use bullet points and bold text. Do not use markdown formatting like ```html.
-    """
+   
     4. MANDATORY DETAILS TO EXTRACT:
-       - For every single hackathon you find, you MUST list: The Event Name, The Exact Dates, problem statement, prize money, The Location (or state if it is Virtual), and the Registration date and Link.
+       - For every single hackathon you find, you MUST list: The Event Name, The Exact Dates, problem statement, prize money, The Location (or state if it is Virtual), and the Registration date and Link. """
     
     available_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
     model = genai.GenerativeModel(available_models[0])
