@@ -35,8 +35,8 @@ def process_with_ai(search_results):
     
     1. Filter out any past events.
     2. CRITICAL: Strictly exclude any event that is NOT explicitly about drones, UAVs, or aerial robotics. We only want drone hackathons.
-    3. CRITICAL: Check the registration status. ONLY include hackathons where registration is currently OPEN or opens in future. If the text mentions "registration closed", "applications closed", or the deadline has passed, DO NOT include it.
-    4. Extract the Name, Dates,problem statement,prize money, Location (or Virtual), and Registration Link.
+    3. CRITICAL: Check the registration status. ONLY include hackathons where registration is currently OPEN. If the text mentions "registration closed", "applications closed", or the deadline has passed, DO NOT include it.
+    4. Extract the Name, Dates, Location (or Virtual), and Registration Link.
     5. Format the results as a clean, professional HTML email. Use bullet points and bold text.
     Do not include any markdown formatting like ```html. Just output raw HTML.
     """
@@ -64,4 +64,5 @@ def send_email(html_content):
 
 if __name__ == "__main__":
     raw_data = search_hackathons()
-    email_body = process_with_ai(raw_
+    email_body = process_with_ai(raw_data)
+    send_email(email_body)
