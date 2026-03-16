@@ -15,14 +15,14 @@ RECEIVER_EMAIL = os.environ.get("RECEIVER_EMAIL")
 genai.configure(api_key=GEMINI_API_KEY)
 
 def search_hackathons():
-    print("Searching the web for NIDAR and drone hackathons...")
+    print("Performing a deep search for NIDAR and drone hackathons...")
     url = "https://api.tavily.com/search"
     payload = {
         "api_key": TAVILY_API_KEY,
-        # A broad, stable search query that won't confuse the AI
         "query": "\"NIDAR hackathon\" future registration OR upcoming open drone UAV hackathons 2026 2027", 
         "search_depth": "advanced",
-        "time_range": "month"
+        "time_range": "month",
+        "max_results": 20  # <--- THIS IS THE NEW LINE!
     }
     response = requests.post(url, json=payload)
     return response.json()
