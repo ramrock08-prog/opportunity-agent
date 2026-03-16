@@ -38,28 +38,29 @@ def search_hackathons():
     return all_results
 
 def process_with_ai(search_results):
-    print("AI is synthesizing deep data...")
-    # This prompt is wrapped in triple quotes to prevent syntax errors
+    print("AI is filtering for active 2026-2027 events only...")
+    
     prompt = f"""
-    You are a strict, data-extracting AI assistant. Use the following results: {search_results}
+    You are a strict Hackathon Auditor. Analyze these results: {search_results}
     
-    1. 🚨 NIDAR WATCH 🚨: 
-       Identify if NIDAR registration for late 2026 or 2027 has news. If closed, look for 'Opening Soon' dates.
+    CRITICAL FILTERING RULES:
+    1. DELETE/IGNORE any event that happened in 2024 or 2025.
+    2. DELETE/IGNORE any event where the registration status is 'Closed' or 'Ended'.
+    3. ONLY include events for late 2026 or 2027.
     
-    2. OTHER DRONE HACKATHONS: 
-       List any other drone/UAV hackathons where registration is currently OPEN.
-       
-    3. MANDATORY DETAILS TO EXTRACT:
-       For every event, you MUST list:
-       - Event Name
-       - Exact Dates
-       - Location (or 'Virtual')
-       - Prize Money/Rewards
-       - Registration Link
+    FOR EACH VALID EVENT:
+    - Event Name (Must be 2026/2027)
+    - Deadline: Highlight this in RED if it's within 7 days.
+    - Status: Explicitly state "REGISTRATION OPEN" or "OPENING SOON".
+    - Prize: EUR/INR amount.
+    - Link: Official URL.
+
+    If NO active 2026/2027 events are found, return exactly this: 
+    "<h1>No New Active Drone Hackathons Found</h1><p>Checked at {datetime.now()}. All results were either old or closed.</p>"
     
-    4. Format the entire email as clean, professional HTML. Use bullet points and bold text. No markdown.
+    Format as clean HTML.
     """
-    
+    # ... rest of your model code ...
     # FIX: Robust model selection to avoid the 'NotFound' error
     available_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
     model = genai.GenerativeModel(available_models[0])
