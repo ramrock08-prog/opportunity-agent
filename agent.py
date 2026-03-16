@@ -19,8 +19,8 @@ def search_hackathons():
     url = "https://api.tavily.com/search"
     payload = {
         "api_key": TAVILY_API_KEY,
-        # We added NIDAR to the exact search query!
-        "query": "NIDAR hackathon 2026 registration status OR upcoming open drone UAV robotics hackathons", 
+        # A broad, stable search query that won't confuse the AI
+        "query": "\"NIDAR hackathon\" future registration OR upcoming open drone UAV hackathons 2026 2027", 
         "search_depth": "advanced",
         "time_range": "month"
     }
@@ -30,25 +30,26 @@ def search_hackathons():
 def process_with_ai(search_results):
     print("AI is analyzing and formatting the data...")
     prompt = f"""
-    You are an AI assistant tracking hackathons. 
+    You are a strict, data-extracting AI assistant tracking hackathons. Do NOT invent or make up information.
     Review the following raw search results: {search_results}
     
-    1. 🚨 NIDAR WATCH (CRITICAL) 🚨: Look specifically for ANY mention of the "NIDAR hackathon". 
-       - If you find information about NIDAR, create a special bolded section at the very top of the email titled "🚨 NIDAR HACKATHON STATUS 🚨". State clearly if registration is open, announced, or if there is no news yet. Include the link if available.
-       - Even if registration is closed or not open yet for NIDAR, tell me its current status.
-    
+    1. 🚨 NIDAR WATCH (CRITICAL) 🚨: 
+       - Search the text for "NIDAR hackathon". We know 2026 registration is closed. 
+       - Check if there is ANY news about registration opening currently or for future years (like late 2026 or 2027). 
+       - Create a bolded section at the top titled "🚨 NIDAR HACKATHON STATUS 🚨" and report exactly what the search results say about its future status. If there is no news, say "No new updates for future registrations."
+
     2. OTHER DRONE HACKATHONS: 
-       - After the NIDAR section, list any other drone, UAV, or aerial robotics hackathons.
-       - ONLY include these other hackathons if their registration is currently OPEN. 
+       - After NIDAR, list any other drone, UAV, or aerial robotics hackathons happening in 2026 or upcoming years.
+       - ONLY include them if registration is currently OPEN. Do not include closed events.
     
-    3. Format the entire email as a clean, professional HTML. Use bullet points and bold text.
-    Do not include any markdown formatting like ```html. Just output raw HTML.
+    3. Format the entire email as a clean, professional HTML. Use bullet points and bold text. Do not use markdown formatting like ```html.
     """
     
     available_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
     model = genai.GenerativeModel(available_models[0])
     
-    response = model.generate_content(prompt)
+    # CRITICAL FIX: Setting temperature to 0.0 makes the AI 100% strict and factual. It will not hallucinate or make things up.
+    response = model.generate_content(prompt, generation_config={"temperature": 0.0})
     return response.text
 
 def send_email(html_content):
