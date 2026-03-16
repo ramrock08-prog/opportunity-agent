@@ -2,8 +2,7 @@ name: Daily Hackathon Agent
 
 on:
   schedule:
-    # This cron job runs at 2:30 AM UTC, which is 8:00 AM IST
-    - cron: '30 2 * * *'
+    - cron: '30 4 * * *'  # Runs at 4:30 AM UTC, which is 10:00 AM IST
   workflow_dispatch: # This magical line lets us click a button to test it right now!
 
 jobs:
