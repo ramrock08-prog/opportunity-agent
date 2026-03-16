@@ -15,61 +15,71 @@ RECEIVER_EMAIL = os.environ.get("RECEIVER_EMAIL")
 genai.configure(api_key=GEMINI_API_KEY)
 
 def search_hackathons():
-    print("Performing a deep search for NIDAR and drone hackathons...")
+    print("Performing specialized multi-query search...")
     url = "https://api.tavily.com/search"
-    payload = {
-        "api_key": TAVILY_API_KEY,
-        "query": "\"NIDAR hackathon\" future registration OR upcoming open drone UAV hackathons 2026 2027", 
-        "search_depth": "advanced",
-        "time_range": "month",
-        "max_results": 20  # <--- THIS IS THE NEW LINE!
-    }
-    response = requests.post(url, json=payload)
-    return response.json()
+    
+    # We use two separate queries to ensure NIDAR doesn't get lost!
+    queries = [
+        "\"NIDAR hackathon\" 2026 2027 registration status official website updates",
+        "upcoming drone UAV robotics hackathons 2026 registration open prizes dates"
+    ]
+    
+    all_results = []
+    for q in queries:
+        payload = {
+            "api_key": TAVILY_API_KEY,
+            "query": q,
+            "search_depth": "advanced",
+            "max_results": 10 # 10 for each query = 20 total high-quality results
+        }
+        response = requests.post(url, json=payload)
+        all_results.append(response.json())
+    
+    return all_results
 
 def process_with_ai(search_results):
-    print("AI is analyzing and formatting the data...")
+    print("AI is synthesizing deep data from multiple sources...")
     prompt = f"""
-    You are a strict, data-extracting AI assistant tracking hackathons. Do NOT invent or make up information.
-    Review the following raw search results: {search_results}
+    You are a professional Hackathon Scout. Analyze these search results: {search_results}
     
-    1. 🚨 NIDAR WATCH (CRITICAL) 🚨: 
-       - Search the text for "NIDAR hackathon". We know 2026 registration is closed. 
-       - Check if there is ANY news about registration opening currently or for future years (like late 2026 or 2027). 
-       - Create a bolded section at the top titled "🚨 NIDAR HACKATHON STATUS 🚨" and report exactly what the search results say about its future status. If there is no news, say "No new updates for future registrations."
-
-    2. OTHER DRONE HACKATHONS: 
-       - After NIDAR, list any other drone, UAV, or aerial robotics hackathons happening in 2026 or upcoming years.
-       - ONLY include them if registration is currently OPEN. Do not include closed events.
+    1. 🚨 NIDAR WATCH 🚨: 
+       Identify if NIDAR registration for late 2026 or 2027 has any news. If the current status is 'Closed', look for 'Registration Opening Soon' dates.
     
-    3. Format the entire email as a clean, professional HTML. Use bullet points and bold text. Do not use markdown formatting like ```html.
-   
-    4. MANDATORY DETAILS TO EXTRACT:
-       - For every single hackathon you find, you MUST list: The Event Name, The Exact Dates, problem statement, prize money, The Location (or state if it is Virtual), and the Registration date and Link. """
+    2. DRONE HACKATHONS (2026+): 
+       Extract every drone/UAV hackathon where registration is currently OPEN. 
     
-    available_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
-    model = genai.GenerativeModel(available_models[0])
+    3. DATA EXTRACTION RULES (MANDATORY):
+       For each event, you MUST find and list:
+       - Event Name
+       - Exact Dates (e.g., March 26-28, 2026)
+       - Location (City, Country OR 'Virtual')
+       - Problem Statement/Theme (What is the hackathon about?)
+       - Prize Money/Rewards (e.g., INR 6 Lakhs, EUR 20,000)
+       - Registration Link & Deadline
     
-    # CRITICAL FIX: Setting temperature to 0.0 makes the AI 100% strict and factual. It will not hallucinate or make things up.
+    4. QUALITY CHECK: If a result is just an Instagram link and lacks details, mention that "Further details are on the official social media page."
+    
+    Format as clean, professional HTML. No markdown.
+    """
+    
+    model = genai.GenerativeModel('gemini-1.5-flash')
+    # Temperature 0.0 ensures the AI doesn't 'guess' missing prizes or dates.
     response = model.generate_content(prompt, generation_config={"temperature": 0.0})
     return response.text
 
 def send_email(html_content):
-    print("Sending the email...")
     msg = MIMEMultipart('alternative')
-    msg['Subject'] = "🚁 NIDAR Watch & Drone Hackathon Report" 
+    msg['Subject'] = "🚁 NIDAR & Drone Hackathon Deep Report"
     msg['From'] = SENDER_EMAIL
     msg['To'] = RECEIVER_EMAIL
-
-    part = MIMEText(html_content, 'html')
-    msg.attach(part)
+    msg.attach(MIMEText(html_content, 'html'))
 
     with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
         server.login(SENDER_EMAIL, SENDER_PASSWORD)
         server.sendmail(SENDER_EMAIL, RECEIVER_EMAIL, msg.as_string())
-    print("Email sent successfully!")
+    print("Deep Report sent!")
 
 if __name__ == "__main__":
-    raw_data = search_hackathons()
-    email_body = process_with_ai(raw_data)
+    data = search_hackathons()
+    email_body = process_with_ai(data)
     send_email(email_body)
