@@ -1,10 +1,10 @@
 import os
 import requests
 import smtplib
+from datetime import datetime  # <--- ADD THIS LINE
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 import google.generativeai as genai
-
 # Load Secret Keys from GitHub
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 TAVILY_API_KEY = os.environ.get("TAVILY_API_KEY")
