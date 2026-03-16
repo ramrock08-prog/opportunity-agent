@@ -15,11 +15,12 @@ RECEIVER_EMAIL = os.environ.get("RECEIVER_EMAIL")
 genai.configure(api_key=GEMINI_API_KEY)
 
 def search_hackathons():
-    print("Searching the web for hackathons...")
+    print("Searching the web for drone hackathons...")
     url = "https://api.tavily.com/search"
     payload = {
         "api_key": TAVILY_API_KEY,
-        "query": "upcoming software hackathons online or in India registration links dates",
+        # We changed the search query here!
+        "query": "upcoming drone hackathons UAV robotics aero registration links dates", 
         "search_depth": "advanced",
         "time_range": "month"
     }
@@ -29,18 +30,17 @@ def search_hackathons():
 def process_with_ai(search_results):
     print("AI is analyzing and formatting the data...")
     prompt = f"""
-    You are an AI assistant tasked with finding hackathons. 
+    You are an AI assistant tasked with finding strictly drone-related hackathons. 
     Review the following raw search results: {search_results}
     
     1. Filter out any past events.
-    2. Extract the Name, Dates, Location (or Virtual), and Registration Link.
-    3. Format the results as a clean, professional HTML email. Use bullet points and bold text.
+    2. CRITICAL: Strictly exclude any event that is NOT explicitly about drones, UAVs, or aerial robotics. We only want drone hackathons.
+    3. Extract the Name, Dates,prize amount,problem statement, Location (or Virtual), and Registration Link.
+    4. Format the results as a clean, professional HTML email. Use bullet points and bold text.
     Do not include any markdown formatting like ```html. Just output raw HTML.
     """
     
-    # Foolproof trick: Auto-detect the first available working model
     available_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
-    print(f"Using auto-detected model: {available_models[0]}")
     model = genai.GenerativeModel(available_models[0])
     
     response = model.generate_content(prompt)
@@ -49,7 +49,8 @@ def process_with_ai(search_results):
 def send_email(html_content):
     print("Sending the email...")
     msg = MIMEMultipart('alternative')
-    msg['Subject'] = "🤖 Your Daily Hackathon Report"
+    # We even changed the email subject line so you know it's the drone version!
+    msg['Subject'] = "🚁 Your Daily Drone Hackathon Report" 
     msg['From'] = SENDER_EMAIL
     msg['To'] = RECEIVER_EMAIL
 
