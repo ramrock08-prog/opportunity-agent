@@ -15,12 +15,12 @@ RECEIVER_EMAIL = os.environ.get("RECEIVER_EMAIL")
 genai.configure(api_key=GEMINI_API_KEY)
 
 def search_hackathons():
-    print("Searching the web for drone hackathons...")
+    print("Searching the web for open drone hackathons...")
     url = "https://api.tavily.com/search"
     payload = {
         "api_key": TAVILY_API_KEY,
-        # We changed the search query here!
-        "query": "upcoming drone hackathons UAV robotics aero registration links dates", 
+        # Notice we added "registration open" and "2026" to force better search results!
+        "query": "upcoming drone UAV robotics hackathons \"registration open\" 2026", 
         "search_depth": "advanced",
         "time_range": "month"
     }
@@ -35,8 +35,9 @@ def process_with_ai(search_results):
     
     1. Filter out any past events.
     2. CRITICAL: Strictly exclude any event that is NOT explicitly about drones, UAVs, or aerial robotics. We only want drone hackathons.
-    3. Extract the Name, Dates,prize amount,problem statement, Location (or Virtual), and Registration Link.
-    4. Format the results as a clean, professional HTML email. Use bullet points and bold text.
+    3. CRITICAL: Check the registration status. ONLY include hackathons where registration is currently OPEN or opens in future. If the text mentions "registration closed", "applications closed", or the deadline has passed, DO NOT include it.
+    4. Extract the Name, Dates,problem statement,prize money, Location (or Virtual), and Registration Link.
+    5. Format the results as a clean, professional HTML email. Use bullet points and bold text.
     Do not include any markdown formatting like ```html. Just output raw HTML.
     """
     
@@ -49,8 +50,7 @@ def process_with_ai(search_results):
 def send_email(html_content):
     print("Sending the email...")
     msg = MIMEMultipart('alternative')
-    # We even changed the email subject line so you know it's the drone version!
-    msg['Subject'] = "🚁 Your Daily Drone Hackathon Report" 
+    msg['Subject'] = "🚁 Your Daily OPEN Drone Hackathon Report" 
     msg['From'] = SENDER_EMAIL
     msg['To'] = RECEIVER_EMAIL
 
@@ -64,5 +64,4 @@ def send_email(html_content):
 
 if __name__ == "__main__":
     raw_data = search_hackathons()
-    email_body = process_with_ai(raw_data)
-    send_email(email_body)
+    email_body = process_with_ai(raw_
