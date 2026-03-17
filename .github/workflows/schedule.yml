@@ -29,7 +29,7 @@ jobs:
       # 3. Install necessary libraries
       - name: Install Dependencies
         run: |
-          pip install requests google-generativeai
+          pip install requests google-genai
 
       # 4. Execute the Agent script
       - name: Run AI Agent
