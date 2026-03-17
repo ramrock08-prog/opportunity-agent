@@ -4,23 +4,34 @@ on:
   schedule:
     # Runs every 5 hours
     - cron: '0 */5 * * *'
-  workflow_dispatch: 
+  workflow_dispatch: # Allows you to run it manually for testing
+
+permissions:
+  contents: write  # Crucial: Gives the bot permission to save the history file
 
 jobs:
-  run-agent:
+  run-scout:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v6 
-
-      - name: Set up Python
-        uses: actions/setup-python@v6 
+      # 1. Pull the latest code from your repo
+      - name: Checkout Repository
+        uses: actions/checkout@v4
         with:
-          python-version: '3.12'
+          fetch-depth: 0 # Fetches full history so it can push changes back
 
+      # 2. Setup Python environment
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      # 3. Install necessary libraries
       - name: Install Dependencies
-        run: pip install requests google-generativeai
+        run: |
+          pip install requests google-generativeai
 
+      # 4. Execute the Agent script
       - name: Run AI Agent
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
@@ -29,3 +40,12 @@ jobs:
           SENDER_PASSWORD: ${{ secrets.SENDER_PASSWORD }}
           RECEIVER_EMAIL: ${{ secrets.RECEIVER_EMAIL }}
         run: python agent.py
+
+      # 5. Save and Push the history.json back to your repo
+      - name: Commit and Push History
+        run: |
+          git config --global user.name "DroneScoutBot"
+          git config --global user.email "actions@github.com"
+          git add history.json
+          # Only commit if the history file actually changed
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Update hackathon history [skip ci]" && git push)
