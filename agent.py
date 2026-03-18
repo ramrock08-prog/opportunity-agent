@@ -34,7 +34,8 @@ def search_web():
     url = "https://api.tavily.com/search"
     payload = {
         "api_key": TAVILY_API_KEY,
-        "query": "upcoming student hackathons in India 2026 registration open",
+        # UPDATED: Specifically asking for UAV and Drone events
+        "query": "upcoming UAV drone student hackathons in India 2026 registration dates prize money",
         "search_depth": "advanced",
         "max_results": 10
     }
@@ -47,14 +48,17 @@ def search_web():
 def filter_with_ai(search_data):
     print("--- 🧠 RUNNING AI FILTER (2.5-FLASH-LITE) ---")
     prompt = f"""
-    You are an expert hackathon scout. Analyze this web search data:
+    You are an expert UAV/Drone hackathon scout. Analyze this web search data:
     {json.dumps(search_data)}
     
     RULES:
-    1. ONLY include hackathons happening in India in 2026.
+    1. ONLY include UAV, drone, aerospace, or robotics hackathons happening in India in 2026.
     2. IGNORE results from 2024 or 2025.
     3. IGNORE news articles or empty pages.
-    4. Return a clean JSON list of objects with 'name', 'date', and 'url'. If none match, return an empty list [].
+    4. Return a clean JSON list of objects. Each object MUST have these exact keys: 
+       'name', 'registration_date', 'event_date', 'prize_money', 'location', and 'url'.
+    5. If a specific detail (like prize money) is not found in the text, put "Not specified".
+    6. If no hackathons match the criteria, return an empty list [].
     """
     try:
         # USING THE CORRECT, ACTIVE FREE-TIER MODEL
@@ -70,7 +74,7 @@ def filter_with_ai(search_data):
 
 def send_email(hackathons):
     if not hackathons:
-        print("No active registration portals found today.")
+        print("No active UAV registration portals found today.")
         return
         
     if not SENDER_EMAIL or not SENDER_PASSWORD:
@@ -81,12 +85,19 @@ def send_email(hackathons):
     msg = MIMEMultipart()
     msg['From'] = SENDER_EMAIL
     msg['To'] = RECEIVER_EMAIL
-    msg['Subject'] = f"🚀 Daily Hackathon Report - {datetime.now().strftime('%Y-%m-%d')}"
+    msg['Subject'] = f"🚁 Daily UAV Hackathon Scout - {datetime.now().strftime('%Y-%m-%d')}"
     
-    body = "<h3>Here are your verified Hackathons:</h3><ul>"
+    # UPDATED: Better email formatting for the new details
+    body = "<h3>Here are your verified UAV/Drone Hackathons:</h3><hr>"
     for h in hackathons:
-        body += f"<li><b>{h.get('name', 'Unknown')}</b> ({h.get('date', 'TBD')}) - <a href='{h.get('url', '#')}'>Link</a></li>"
-    body += "</ul>"
+        body += f"<h4><b>{h.get('name', 'Unknown Event')}</b></h4>"
+        body += f"<ul>"
+        body += f"<li><b>Event Date:</b> {h.get('event_date', 'Not specified')}</li>"
+        body += f"<li><b>Registration Deadline:</b> {h.get('registration_date', 'Not specified')}</li>"
+        body += f"<li><b>Prize Money:</b> {h.get('prize_money', 'Not specified')}</li>"
+        body += f"<li><b>Location:</b> {h.get('location', 'Not specified')}</li>"
+        body += f"<li><b>Link:</b> <a href='{h.get('url', '#')}'>Register Here</a></li>"
+        body += f"</ul><br>"
     
     msg.attach(MIMEText(body, 'html'))
     
@@ -121,4 +132,4 @@ if __name__ == "__main__":
                 
         send_email(valid_hackathons)
     else:
-        print("No active registration portals found today.")
+        print("No active UAV registration portals found today.")
