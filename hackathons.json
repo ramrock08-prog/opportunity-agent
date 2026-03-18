@@ -54,5 +54,45 @@
         "prize_money": null,
         "location": null,
         "url": "https://paglab.org/event/2026-03-16-drones-meet-ai/"
+    },
+    {
+        "name": "FLYING WINGS National-Level Hackathon 2026",
+        "registration_date": "March 1 - March 15, 2026",
+        "event_date": null,
+        "prize_money": "\u20b91,00,000",
+        "location": "IIT Jodhpur",
+        "url": "https://www.linkedin.com/posts/iitjodhpur_flyingwings2026-iitjodhpur-hackathonindia-activity-7434099768076705793-IZbW"
+    },
+    {
+        "name": "Hyperspace India's BIGGEST Deep-Tech Hackathon",
+        "registration_date": null,
+        "event_date": "February 7-8, 2026",
+        "prize_money": "\u20b91,00,000",
+        "location": null,
+        "url": "https://www.instagram.com/p/DShFMK6j31u/"
+    },
+    {
+        "name": "HACKFUSION 2026 - NATIONAL LEVEL HACKATHON",
+        "registration_date": null,
+        "event_date": "April 3-4, 2026",
+        "prize_money": "\u20b950,000+",
+        "location": "JNTUH",
+        "url": "https://www.instagram.com/p/DV39WUJlhF-/"
+    },
+    {
+        "name": "DRONE DETECTION TO AI COMMUNICATION COACH",
+        "registration_date": null,
+        "event_date": "February 18, 2026",
+        "prize_money": null,
+        "location": null,
+        "url": "https://www.instagram.com/reel/DVf95a_Ef6U/"
+    },
+    {
+        "name": "YANTRA YUGAM 2026",
+        "registration_date": null,
+        "event_date": "March 24-25, 2026",
+        "prize_money": "\u20b950,000",
+        "location": null,
+        "url": "https://www.instagram.com/reel/DVanbp_Ez4i/"
     }
 ]
