@@ -2,19 +2,23 @@ import os
 import requests
 import json
 import smtplib
-from datetime import datetime  # THIS FIXES SCREENSHOT 1
+from datetime import datetime
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from google import genai
-from google.genai import errors
 
-# 1. Setup API Keys
+# ==========================================
+# 1. SETUP API KEYS
+# ==========================================
 client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
 TAVILY_API_KEY = os.environ["TAVILY_API_KEY"]
+EMAIL_USER = os.environ.get("EMAIL_USER") # Make sure this matches your GitHub Secret name
+EMAIL_PASS = os.environ.get("EMAIL_PASS") # Make sure this matches your GitHub Secret name
 
+# ==========================================
+# 2. HELPER FUNCTIONS
+# ==========================================
 def check_link(url):
-def list_my_models():
-    print("--- 🔍 ASKING GOOGLE FOR AVAILABLE MODELS ---")
     try:
         headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
         response = requests.get(url, headers=headers, timeout=10)
@@ -22,120 +26,92 @@ def list_my_models():
     except Exception:
         return False
 
-def get_history():
-    if os.path.exists("history.json"):
-        try:
-            with open("history.json", "r") as f:
-                data = json.load(f)
-                return data if isinstance(data, list) else []
-        except Exception:
-            return []
+def search_web():
+    print("--- 🔍 SEARCHING THE WEB (TAVILY) ---")
+    url = "https://api.tavily.com/search"
+    payload = {
+        "api_key": TAVILY_API_KEY,
+        "query": "upcoming student hackathons in India 2026 registration open",
+        "search_depth": "advanced",
+        "max_results": 10
+    }
+    response = requests.post(url, json=payload)
+    if response.status_code == 200:
+        return response.json().get('results', [])
+    print("🚨 Tavily Search Failed")
     return []
 
-def save_history(data):
-    with open("history.json", "w") as f:
-        json.dump(data, f, indent=4)
-
-def run_scout():
-    print(f"--- Starting Drone Scout Run: {datetime.now()} ---")
-    
-    # 2. KEYWORD EXPANSION
-    queries = [
-        "Drone UAV hackathons India 2026 registration open",
-        "MeitY drone challenge 2026 apply now",
-        "Unstop drone competitions India 2026",
-    ]
-    
-    all_search_data = []
-    for q in queries:
-        url = "https://api.tavily.com/search"
-        payload = {"api_key": TAVILY_API_KEY, "query": q, "search_depth": "basic"}
-        try:
-            res = requests.post(url, json=payload).json()
-            all_search_data.extend(res.get('results', []))
-        except Exception as e:
-            print(f"Search error: {e}")
-            continue
-
-    # 3. BULLETPROOF AI FILTERING
-    current_date = datetime.now().strftime("%Y-%m-%d")
+def filter_with_ai(search_data):
+    print("--- 🧠 RUNNING AI FILTER (2.5-FLASH-LITE) ---")
     prompt = f"""
-    Today's Date: {current_date}. 
-    Data: {all_search_data}
-    RULES: ONLY return active drone hackathons in India for 2026 in EXACT JSON format. 
-    Format: [{{"name": "X", "deadline": "YYYY-MM-DD", "location": "Y", "prize": "Z", "url": "URL"}}]
-    Return [] if nothing is found.
-    """
+    You are an expert hackathon scout. Analyze this web search data:
+    {json.dumps(search_data)}
     
+    RULES:
+    1. ONLY include hackathons happening in India in 2026.
+    2. IGNORE results from 2024 or 2025.
+    3. IGNORE news articles or empty pages.
+    4. Return a clean JSON list of objects with 'name', 'date', and 'url'. If none match, return an empty list [].
+    """
     try:
+        # USING THE CORRECT, ACTIVE FREE-TIER MODEL
         response = client.models.generate_content(
             model='gemini-2.5-flash-lite',
-            contents=prompt
+            contents=prompt,
+            config={'response_mime_type': 'application/json'}
         )
-        clean_text = response.text.replace('```json', '').replace('```', '').strip()
-        found_events = json.loads(clean_text)
-        client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
-
-    except errors.ClientError as e:
-        # THIS FIXES SCREENSHOT 2 (The 429 Quota Error)
-        print(f"🚨 GOOGLE API LIMIT HIT: {e}")
-        print("We asked the AI too many questions too fast. The bot will try again on its next scheduled run.")
-        return # Gracefully exit without crashing
+        return json.loads(response.text)
     except Exception as e:
-        print(f"AI Formatting Error: {e}")
-        found_events = []
+        print(f"🚨 AI Filter Error: {e}")
+        return []
 
-    # 4. MEMORY & VERIFICATION
-    history = get_history()
-    new_to_report = []
-    
-    for event in found_events:
-        if check_link(event['url']):
-            if not any(h['url'] == event['url'] for h in history):
-                new_to_report.append(event)
-
-    # 5. REPORTING
-    if new_to_report or history:
-        updated_history = new_to_report + history
-        save_history(updated_history[:15])
-        send_email(new_to_report, history)
-    else:
+def send_email(hackathons):
+    if not hackathons:
         print("No active registration portals found today.")
-
-def send_email(new, old):
+        return
+        
+    print("--- 📧 SENDING EMAIL ---")
     msg = MIMEMultipart()
-    msg['Subject'] = f"🚀 [ALERT] {len(new)} New Drone Registrations Open"
+    msg['From'] = EMAIL_USER
+    msg['To'] = EMAIL_USER
+    msg['Subject'] = f"🚀 Daily Hackathon Report - {datetime.now().strftime('%Y-%m-%d')}"
     
-    html = f"<h2>🔥 NEW DISCOVERIES ({datetime.now().strftime('%d %b %Y')})</h2>"
-    if not new:
-        html += "<p>No new portals opened recently.</p>"
-    else:
-        for item in new:
-            html += f"<p><b>{item['name']}</b><br>Deadline: {item['deadline']}<br><a href='{item['url']}'>Register</a></p>"
+    body = "<h3>Here are your verified Hackathons:</h3><ul>"
+    for h in hackathons:
+        body += f"<li><b>{h.get('name', 'Unknown')}</b> ({h.get('date', 'TBD')}) - <a href='{h.get('url', '#')}'>Link</a></li>"
+    body += "</ul>"
     
-    if old:
-        html += "<h3>STILL ACTIVE</h3>"
-        for item in old[:5]:
-            html += f"<p>{item['name']} - <a href='{item['url']}'>Link</a></p>"
-
-    msg.attach(MIMEText(html, 'html'))
+    msg.attach(MIMEText(body, 'html'))
     
     try:
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
-            server.login(os.environ["SENDER_EMAIL"], os.environ["SENDER_PASSWORD"])
-            server.sendmail(os.environ["SENDER_EMAIL"], os.environ["RECEIVER_EMAIL"], msg.as_string())
-        print("Email Sent!")
-        # This asks Google for every model your key is allowed to use
-        models = client.models.list()
-        
-        print("✅ SUCCESS! Your API Key has access to:")
-        for m in models:
-            print(f"- {m.name}")
-            
+        server = smtplib.SMTP('smtp.gmail.com', 587)
+        server.starttls()
+        server.login(EMAIL_USER, EMAIL_PASS)
+        server.send_message(msg)
+        server.quit()
+        print("✅ Email Sent Successfully!")
     except Exception as e:
-        print(f"Email Failed: {e}")
-        print(f"🚨 ERROR LISTING MODELS: {e}")
+        print(f"🚨 Email Failed: {e}")
 
+# ==========================================
+# 3. MAIN EXECUTION (DRONE SCOUT)
+# ==========================================
 if __name__ == "__main__":
-    run_scout()
-    list_my_models()
+    print(f"--- Starting Drone Scout Run: {datetime.now()} ---")
+    
+    raw_data = search_web()
+    
+    if raw_data:
+        ai_filtered_data = filter_with_ai(raw_data)
+        
+        # Check if the links actually work
+        valid_hackathons = []
+        for event in ai_filtered_data:
+            if check_link(event.get('url', '')):
+                valid_hackathons.append(event)
+            else:
+                print(f"Dead link removed: {event.get('name')}")
+                
+        send_email(valid_hackathons)
+    else:
+        print("No active registration portals found today.")
