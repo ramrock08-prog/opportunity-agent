@@ -1,9 +1,9 @@
-name: Drone Hackathon Scout
+name: Run Drone Scout
 
 on:
+  workflow_dispatch:   # This keeps the manual "Run workflow" button
   schedule:
-    # Runs every 5 hours
-    - cron: '0 */5 * * *'
+    - cron: '0 */5 * * *'  # 👈 THIS is the magic 5-hour timer
   workflow_dispatch: # Allows you to run it manually for testing
 
 permissions:
