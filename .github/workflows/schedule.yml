@@ -1,11 +1,11 @@
 name: Run Drone Scout
 
 on:
-  workflow_dispatch:
+  workflow_dispatch:   # 👈 Lets you run it manually
   schedule:
-    - cron: '0 */7 * * *'  # 👈 Runs every 7 hours
+    - cron: '0 */7 * * *'  # 👈 ONLY runs exactly every 7 hours
 
-# 👈 THIS IS CRITICAL: Gives your bot permission to save the memory file
+# Gives your bot explicit permission to save the memory file
 permissions:
   contents: write
 
@@ -36,11 +36,10 @@ jobs:
           RECEIVER_EMAIL: ${{ secrets.RECEIVER_EMAIL }}
         run: python agent.py
 
-      # 👈 NEW STEP: Saves the memory file back to GitHub so it's there next time
+      # Safe save block: Commits memory ONLY if there are new hackathons
       - name: Save Memory Bank
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
           git add hackathons.json
-          git commit -m "🤖 Update hackathon memory bank" || echo "No new hackathons found, nothing to save."
-          git push
+          git diff --quiet && git diff --staged --quiet || (git commit -m "🤖 Update hackathon memory bank" && git push)
