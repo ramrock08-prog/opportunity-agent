@@ -8,12 +8,15 @@ from email.mime.text import MIMEText
 from google import genai
 
 # ==========================================
-# 1. SETUP API KEYS
+# 1. SETUP API KEYS & SECRETS
 # ==========================================
 client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
 TAVILY_API_KEY = os.environ["TAVILY_API_KEY"]
-EMAIL_USER = os.environ.get("EMAIL_USER") # Make sure this matches your GitHub Secret name
-EMAIL_PASS = os.environ.get("EMAIL_PASS") # Make sure this matches your GitHub Secret name
+
+# Matching your exact GitHub Actions YAML names
+SENDER_EMAIL = os.environ.get("SENDER_EMAIL")
+SENDER_PASSWORD = os.environ.get("SENDER_PASSWORD")
+RECEIVER_EMAIL = os.environ.get("RECEIVER_EMAIL")
 
 # ==========================================
 # 2. HELPER FUNCTIONS
@@ -70,10 +73,14 @@ def send_email(hackathons):
         print("No active registration portals found today.")
         return
         
+    if not SENDER_EMAIL or not SENDER_PASSWORD:
+        print("🚨 ERROR: Email credentials are missing! Check your GitHub Secrets.")
+        return
+
     print("--- 📧 SENDING EMAIL ---")
     msg = MIMEMultipart()
-    msg['From'] = EMAIL_USER
-    msg['To'] = EMAIL_USER
+    msg['From'] = SENDER_EMAIL
+    msg['To'] = RECEIVER_EMAIL
     msg['Subject'] = f"🚀 Daily Hackathon Report - {datetime.now().strftime('%Y-%m-%d')}"
     
     body = "<h3>Here are your verified Hackathons:</h3><ul>"
@@ -86,7 +93,7 @@ def send_email(hackathons):
     try:
         server = smtplib.SMTP('smtp.gmail.com', 587)
         server.starttls()
-        server.login(EMAIL_USER, EMAIL_PASS)
+        server.login(SENDER_EMAIL, SENDER_PASSWORD)
         server.send_message(msg)
         server.quit()
         print("✅ Email Sent Successfully!")
