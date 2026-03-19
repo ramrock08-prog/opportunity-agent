@@ -166,5 +166,29 @@
         "prize_money": null,
         "location": "Vigyan Bhawan, Ahmedabad, Gujarat",
         "url": "https://droneshaurya.com/"
+    },
+    {
+        "name": "DRON CODEATHON 2026 (2nd Edition)",
+        "registration_date": null,
+        "event_date": "7 February 2026",
+        "prize_money": null,
+        "location": null,
+        "url": "https://www.instagram.com/reel/DUdC0_lDHlJ/"
+    },
+    {
+        "name": "Droneathon 2026",
+        "registration_date": null,
+        "event_date": "19th and 20th February 2026",
+        "prize_money": null,
+        "location": "GITAM Bengaluru",
+        "url": "https://gevents.gitam.edu/event_details/NjMxNQ.."
+    },
+    {
+        "name": "IIT Jodhpur National-Level Hackathon 2026",
+        "registration_date": null,
+        "event_date": null,
+        "prize_money": null,
+        "location": "IIT Jodhpur",
+        "url": "https://www.instagram.com/p/DVGBam9E6DH/"
     }
 ]
