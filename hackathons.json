@@ -134,5 +134,37 @@
         "prize_money": null,
         "location": "Presidency University, Bengaluru",
         "url": "https://www.innovatexfest.in/events.php"
+    },
+    {
+        "name": "Innovation Takes Flight at IIT Jodhpur",
+        "registration_date": "March 1, 2026",
+        "event_date": "March 15, 2026 (Deadline)",
+        "prize_money": "\u20b91,00,000 (in each operation final round)",
+        "location": "IIT Jodhpur",
+        "url": "https://www.instagram.com/p/DVXpx0VEwmG/"
+    },
+    {
+        "name": "Quantumard National Hackathon 2026",
+        "registration_date": "February 20, 2026",
+        "event_date": "February 7-15, 2026 (Build Prototype), March 1, 2026 (Pitch & Win)",
+        "prize_money": "\u20b910,000 Total Prize Pool",
+        "location": null,
+        "url": "https://qnh.quantumard.com/"
+    },
+    {
+        "name": "IIT Jodhpur Flying Wings : National Level Hackathon 2026",
+        "registration_date": null,
+        "event_date": null,
+        "prize_money": null,
+        "location": "IIT Jodhpur",
+        "url": "https://www.iitj.ac.in/flying-wings"
+    },
+    {
+        "name": "Drone Shaurya 2026",
+        "registration_date": null,
+        "event_date": "May 21-22, 2026",
+        "prize_money": null,
+        "location": "Vigyan Bhawan, Ahmedabad, Gujarat",
+        "url": "https://droneshaurya.com/"
     }
 ]
