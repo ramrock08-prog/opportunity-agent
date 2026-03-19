@@ -206,5 +206,13 @@
         "prize_money": null,
         "location": "Lovely Professional University, Punjab",
         "url": "https://neurobots.in/hackathon"
+    },
+    {
+        "name": "TEKRON 2.0 - Drone Havoc",
+        "registration_date": null,
+        "event_date": "30th January, 2026",
+        "prize_money": "75,000",
+        "location": "ADYPU",
+        "url": "https://www.scribd.com/document/999537597/Useful-for-engineering-students"
     }
 ]
