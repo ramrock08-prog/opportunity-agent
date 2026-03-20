@@ -222,5 +222,21 @@
         "prize_money": null,
         "location": "Study World College of Engineering, Coimbatore, India",
         "url": "https://www.knowafest.com/explore/events/2026/02/1801-hands-workshop-uav-drone-technology-2026-study-world-college-engineering-coimbatore"
+    },
+    {
+        "name": "Flying Wings 2026",
+        "registration_date": "March 1-15, 2026",
+        "event_date": null,
+        "prize_money": "1,00,000",
+        "location": "IIT Jodhpur",
+        "url": "https://www.linkedin.com/posts/srmdei_hackathon-defenceinnovation-flyingwings2026-activity-7437096435927478272-1Xpg"
+    },
+    {
+        "name": "Project Expo 4.0",
+        "registration_date": null,
+        "event_date": "January 30, 2026",
+        "prize_money": "50000",
+        "location": "India",
+        "url": "https://www.instagram.com/reel/DUD7nS2jO7p/"
     }
 ]
