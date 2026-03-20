@@ -214,5 +214,13 @@
         "prize_money": "75,000",
         "location": "ADYPU",
         "url": "https://www.scribd.com/document/999537597/Useful-for-engineering-students"
+    },
+    {
+        "name": "Hands on Workshop on Uav and Drone Technology 2026",
+        "registration_date": null,
+        "event_date": "26th - 27th February 2026",
+        "prize_money": null,
+        "location": "Study World College of Engineering, Coimbatore, India",
+        "url": "https://www.knowafest.com/explore/events/2026/02/1801-hands-workshop-uav-drone-technology-2026-study-world-college-engineering-coimbatore"
     }
 ]
