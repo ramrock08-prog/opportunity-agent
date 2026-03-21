@@ -246,5 +246,13 @@
         "prize_money": null,
         "location": "Chandigarh University",
         "url": "https://www.cuchd.in/aifest-2026/"
+    },
+    {
+        "name": "HYPERSPACE INNOVATION HACKATHON-2026",
+        "registration_date": null,
+        "event_date": null,
+        "prize_money": null,
+        "location": "India",
+        "url": "https://vision.hack2skill.com/event/hyperspace-hackathon"
     }
 ]
