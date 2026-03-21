@@ -254,5 +254,29 @@
         "prize_money": null,
         "location": "India",
         "url": "https://vision.hack2skill.com/event/hyperspace-hackathon"
+    },
+    {
+        "name": "Flying Wings 2026 - Cardboard Voyager Extreme Challenge",
+        "registration_date": "March 30, 2026",
+        "event_date": null,
+        "prize_money": null,
+        "location": "IIT Jodhpur, India",
+        "url": "https://www.linkedin.com/posts/iitjodhpur_iitjodhpur-flyingwings-hackathon-activity-7440689004502564864-frF3"
+    },
+    {
+        "name": "Drones Meet AI: Spring Hackathon 2026",
+        "registration_date": null,
+        "event_date": "March 16-27, 2026",
+        "prize_money": null,
+        "location": "Freising, Germany (Note: This event is not in India)",
+        "url": "https://eveeno.com/drones-meet-ai"
+    },
+    {
+        "name": "Geospatial Intelligence Hackathon",
+        "registration_date": "March 5, 2026",
+        "event_date": null,
+        "prize_money": null,
+        "location": null,
+        "url": "https://www.instagram.com/p/DTuY-g_DxHt/?hl=en"
     }
 ]
