@@ -294,5 +294,21 @@
         "prize_money": "up to 5 Lakhs",
         "location": null,
         "url": "https://www.facebook.com/karunyauniversity/posts/mindkraft-2026-is-herewin-prizes-up-to-5-lakhsstep-into-the-world-of-innovation-/1307633344745149/"
+    },
+    {
+        "name": "LAKSHAGRIHA HACKATHON 2026",
+        "registration_date": "15 February 2026",
+        "event_date": null,
+        "prize_money": null,
+        "location": "India",
+        "url": "https://www.dbuu.ac.in/lakshagriha-hackathon"
+    },
+    {
+        "name": "MeitY & DFI announce INR 40 Lakh prize money for students to develop autonomous drones",
+        "registration_date": null,
+        "event_date": null,
+        "prize_money": "INR 40 Lakh",
+        "location": "India",
+        "url": "https://www.dronefederation.in/media-hub/meity-dfi-announce-inr-40-lakh-prize-money-for-students-to-develop-autonomous-drones"
     }
 ]
