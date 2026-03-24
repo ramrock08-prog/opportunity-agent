@@ -318,5 +318,13 @@
         "prize_money": "+\u20b950,000",
         "location": "Malla Reddy University, Hyderabad",
         "url": "https://www.instagram.com/p/DVU39JOE-dE/"
+    },
+    {
+        "name": "ISRO's 2026 Robotics Challenge (ASCEND)",
+        "registration_date": null,
+        "event_date": null,
+        "prize_money": "\u20b927 Lakh",
+        "location": "Bengaluru, India",
+        "url": "https://makersmuse.in/news/isros-2026-robotics-challenge/"
     }
 ]
