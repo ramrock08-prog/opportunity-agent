@@ -90,33 +90,34 @@ def search_web():
 def filter_with_ai(raw_results):
     print("🧠 Running AI filter...")
     prompt = f"""
-You are a ruthless UAV/Drone hackathon auditor.
-
-Today's date: {TODAY} (format: YYYY-MM-DD)
+You are a ruthless UAV/Drone hackathon auditor. Today's date: {TODAY}
 
 RAW DATA:
 {json.dumps(raw_results, indent=2)}
 
-STRICT RULES — if ANY rule fails, the event is DELETED:
-1. Must be UAV, drone, aerial robotics, or aerospace. Anything else = DELETE.
-2. Must be in INDIA. Anything else = DELETE.
-3. Registration deadline must be STRICTLY AFTER {TODAY}. 
-   - If deadline is before or equal to {TODAY} = DELETE immediately.
-   - If deadline says "closed", "ended", "over" = DELETE immediately.
-   - If you CANNOT find a clear registration deadline = DELETE it. Do not guess.
-4. Event year must be 2026 or later. Anything from 2024 or 2025 = DELETE.
-5. News articles, blog posts, scholarship pages = DELETE.
+DELETION RULES — fail ANY rule = event is permanently deleted:
+1. Not about UAV, drone, aerial robotics, or aerospace = DELETE
+2. Not in INDIA = DELETE (USA, Europe, anywhere outside India = DELETE)
+3. Registration deadline is before or on {TODAY} = DELETE
+4. Registration deadline says "Not specified" or is missing = DELETE
+5. Event date has already passed (before {TODAY}) = DELETE
+6. Event date is "Not specified" = DELETE
+7. From 2024 or 2025 = DELETE
+8. News article, blog post, press release, scholarship = DELETE
+9. Duplicate of another event in the list = DELETE, keep only one
 
-Return ONLY a valid JSON array. Zero explanation. Zero markdown.
+Only events that pass ALL 9 rules survive.
+
+Return ONLY a valid JSON array. No explanation. No markdown.
 Each object must have exactly these keys:
 - "name": Full event name
-- "event_date": When the event happens (e.g. "15-17 April 2026")
-- "registration_deadline": Last date to register (e.g. "31 March 2026")
-- "prize_money": Prize amount (e.g. "INR 1,00,000" or "Not specified")
-- "location": City and state, or "Online"
-- "url": Direct registration or official page URL
+- "event_date": Exact dates only (e.g. "17-18 July 2026")
+- "registration_deadline": Exact date only (e.g. "30 April 2026")
+- "prize_money": Amount or "Not specified"
+- "location": City and state only
+- "url": Direct registration link
 
-If zero events pass ALL rules, return exactly: []
+If zero events pass all rules return exactly: []
 """
     try:
         response = client.models.generate_content(
@@ -132,7 +133,6 @@ If zero events pass ALL rules, return exactly: []
     except Exception as e:
         print(f"  AI filter error: {e}")
         return []
-
 # ==========================================
 # VERIFY CANDIDATES
 # Check each link is alive before trusting it.
