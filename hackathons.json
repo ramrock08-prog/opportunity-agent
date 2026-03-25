@@ -358,5 +358,13 @@
         "prize_money": null,
         "location": "India",
         "url": "https://garuda-india-hackathon-24.devpost.com/details/dates"
+    },
+    {
+        "name": "YANTRA YUGAM",
+        "registration_date": "March 19th, 2026",
+        "event_date": "March 24th-25th, 2026",
+        "prize_money": "Not specified",
+        "location": "India",
+        "url": "https://www.instagram.com/p/DV074T3j_ZF/"
     }
 ]
