@@ -92,31 +92,31 @@ def filter_with_ai(raw_results):
     prompt = f"""
 You are a ruthless UAV/Drone hackathon auditor.
 
-Today's date: {TODAY}
-
-Below is raw web search data. Your job is to extract only the hackathons that pass ALL of these rules:
-
-RULES:
-1. Must be about UAV, drones, aerial robotics, or aerospace. Reject anything else.
-2. Must be in INDIA (physical or online-India-specific).
-3. Registration deadline must be AFTER {TODAY}. If the deadline has passed, reject it.
-4. Reject news articles, blog posts, scholarship pages, and results pages.
-5. Reject any event from 2024 or 2025.
-6. If registration deadline is not clearly stated, mark it as "Not specified" — do NOT guess.
+Today's date: {TODAY} (format: YYYY-MM-DD)
 
 RAW DATA:
 {json.dumps(raw_results, indent=2)}
 
-Return ONLY a valid JSON array. No explanation, no markdown, no extra text.
+STRICT RULES — if ANY rule fails, the event is DELETED:
+1. Must be UAV, drone, aerial robotics, or aerospace. Anything else = DELETE.
+2. Must be in INDIA. Anything else = DELETE.
+3. Registration deadline must be STRICTLY AFTER {TODAY}. 
+   - If deadline is before or equal to {TODAY} = DELETE immediately.
+   - If deadline says "closed", "ended", "over" = DELETE immediately.
+   - If you CANNOT find a clear registration deadline = DELETE it. Do not guess.
+4. Event year must be 2026 or later. Anything from 2024 or 2025 = DELETE.
+5. News articles, blog posts, scholarship pages = DELETE.
+
+Return ONLY a valid JSON array. Zero explanation. Zero markdown.
 Each object must have exactly these keys:
 - "name": Full event name
-- "event_date": When the event happens (e.g. "15-17 April 2026" or "Not specified")
-- "registration_deadline": Last date to register (e.g. "31 March 2026" or "Not specified")
+- "event_date": When the event happens (e.g. "15-17 April 2026")
+- "registration_deadline": Last date to register (e.g. "31 March 2026")
 - "prize_money": Prize amount (e.g. "INR 1,00,000" or "Not specified")
 - "location": City and state, or "Online"
 - "url": Direct registration or official page URL
 
-If zero hackathons pass the rules, return exactly: []
+If zero events pass ALL rules, return exactly: []
 """
     try:
         response = client.models.generate_content(
