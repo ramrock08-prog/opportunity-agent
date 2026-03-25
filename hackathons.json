@@ -342,5 +342,21 @@
         "prize_money": null,
         "location": "DGI Greater Noida",
         "url": "https://www.facebook.com/DronacharyaGreaterNoida/posts/-dron-codeathon-2026-2nd-edition-hackathon-under-ai-atmanirbhar-bharat-dgi-great/1329458552546038/"
+    },
+    {
+        "name": "TechnoTarang Hackathon 2026",
+        "registration_date": null,
+        "event_date": "April 4-5, 2026",
+        "prize_money": "\u20b95,00,000",
+        "location": "India",
+        "url": "https://www.instagram.com/p/DWPFIQ4jJ9v/"
+    },
+    {
+        "name": "GARUDA INDIA HACKATHON",
+        "registration_date": null,
+        "event_date": "September 2026",
+        "prize_money": null,
+        "location": "India",
+        "url": "https://garuda-india-hackathon-24.devpost.com/details/dates"
     }
 ]
