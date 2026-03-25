@@ -326,5 +326,21 @@
         "prize_money": "\u20b927 Lakh",
         "location": "Bengaluru, India",
         "url": "https://makersmuse.in/news/isros-2026-robotics-challenge/"
+    },
+    {
+        "name": "Drone Workshop - 2026",
+        "registration_date": null,
+        "event_date": "28th February 2026",
+        "prize_money": null,
+        "location": "Madras Institute of Technology (MIT), Anna University, Chennai, Tamil Nadu",
+        "url": "https://unstop.com/workshops-webinars/drone-workshop-madras-institute-of-technology-mit-anna-university-chennai-tamil-nadu-1640138"
+    },
+    {
+        "name": "DRON CODEATHON 2026 (2nd Edition)",
+        "registration_date": null,
+        "event_date": null,
+        "prize_money": null,
+        "location": "DGI Greater Noida",
+        "url": "https://www.facebook.com/DronacharyaGreaterNoida/posts/-dron-codeathon-2026-2nd-edition-hackathon-under-ai-atmanirbhar-bharat-dgi-great/1329458552546038/"
     }
 ]
