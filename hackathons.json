@@ -1,1 +1,18 @@
-[]
+[
+    {
+        "name": "Flying Wings : National Level Hackathon 2026",
+        "event_date": "17-18 July 2026",
+        "registration_deadline": "30 March 2026",
+        "prize_money": "Not specified",
+        "location": "Jodhpur, Rajasthan",
+        "url": "https://www.iitj.ac.in/flying-wings/en/competition-details"
+    },
+    {
+        "name": "National Level Drone and Robot Race Championship 2026",
+        "event_date": "30 March 2026",
+        "registration_deadline": "30 March 2026",
+        "prize_money": "10000",
+        "location": "Thanjavur",
+        "url": "https://www.knowafest.com/explore/events/2026/03/1818-national-level-drone-robot-race-championship-2026-kings-college-engineering-technical-event-thanjavur"
+    }
+]
