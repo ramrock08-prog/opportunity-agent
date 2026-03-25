@@ -241,7 +241,31 @@ def _card(h, is_new):
       <a href="{url}" style="display:inline-block; margin-top:10px; background:{border}; color:white; padding:8px 14px; text-decoration:none; border-radius:4px; font-size:13px;">Register Now →</a>
     </div>
     """
-
+def hard_date_filter(candidates):
+    """Python-level safety net — removes anything expired regardless of AI decision."""
+    today = datetime.now().date()
+    clean = []
+    for h in candidates:
+        deadline = h.get("registration_deadline", "")
+        # If deadline is missing or not specified, reject
+        if not deadline or deadline.strip().lower() in ["not specified", "n/a", ""]:
+            print(f"  🗑️ Rejected (no deadline): {h.get('name')}")
+            continue
+        # Try to parse the date
+        for fmt in ["%d %B %Y", "%B %d, %Y", "%d-%m-%Y", "%Y-%m-%d", "%d %b %Y"]:
+            try:
+                parsed_date = datetime.strptime(deadline.strip(), fmt).date()
+                if parsed_date > today:
+                    clean.append(h)
+                else:
+                    print(f"  🗑️ Rejected (expired {deadline}): {h.get('name')}")
+                break
+            except ValueError:
+                continue
+        else:
+            # Could not parse the date format — reject it
+            print(f"  🗑️ Rejected (unreadable date '{deadline}'): {h.get('name')}")
+    return clean
 # ==========================================
 # MAIN
 # ==========================================
@@ -258,6 +282,7 @@ if __name__ == "__main__":
     # Search + filter + verify
     raw          = search_web()
     candidates   = filter_with_ai(raw) if raw else []
+    candidates   = hard_date_filter(candidates)
     new_valid    = verify_candidates(candidates, known_urls)
 
     # Merge and save
