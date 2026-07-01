@@ -151,3 +151,7 @@ python agent.py
 ## 👤 Author
 
 Built solo as a personal automation project — combining web search, LLM reasoning, and CI/CD scheduling into one self-sufficient pipeline.
+
+## 📄 License
+
+Released under the MIT License — free to use, fork, and adapt.
