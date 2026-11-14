@@ -1,0 +1,17 @@
+﻿.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.log
+.pytest_cache/
+.env
+.env.*
+!.env.example
+opportunities.backup.json
+profile.json
+bookmarks.json
+*.db
+*.db-shm
+*.db-wal
+frontend/dist/
+frontend/node_modules/

@@ -1,0 +1,95 @@
+[
+  {
+    "title": "Software Engineering Intern (2027 Start) - Winter",
+    "type": "internship",
+    "organization": "Databricks",
+    "description": "Software Engineering Intern position for Winter 2027 (January-April) to build features contributing directly to the Databricks platform across teams including full stack, backend, infrastructure, systems, tools, cloud, databases, and customer-facing products.",
+    "source_url": "https://www.databricks.com/company/careers/university-recruiting---engineering/software-engineering-intern-2027-start---winter-8732364002",
+    "application_url": "https://www.databricks.com/company/careers/university-recruiting---engineering/software-engineering-intern-2027-start---winter-8732364002",
+    "deadline": null,
+    "start_date": "2027-01-01",
+    "location": "Not specified",
+    "remote": null,
+    "eligibility": [],
+    "required_skills": [],
+    "fields": [
+      "Software Engineering"
+    ],
+    "degree_requirements": [],
+    "year_requirements": [],
+    "stipend": null,
+    "prize_money": null,
+    "source": "databricks.com",
+    "confidence": 0.9
+  },
+  {
+    "title": "Software Engineer - Winter Intern",
+    "type": "internship",
+    "organization": "Rubrik",
+    "description": "Software Engineer - Winter Intern position at Rubrik in Bangalore, India Office, running from January 2027 to May 2027.",
+    "source_url": "https://www.rubrik.com/company/careers/departments/job.8166523",
+    "application_url": "https://www.rubrik.com/company/careers/departments/job.8166523",
+    "deadline": null,
+    "start_date": "2027-01-01",
+    "location": "Bangalore, India",
+    "remote": false,
+    "eligibility": [
+      "CGPA 8 and above",
+      "2027 graduates of Circuital branches only",
+      "Available from January 2027 to May 2027 in Bangalore for the onsite internship"
+    ],
+    "required_skills": [
+      "Proficiency in one or more general-purpose programming languages like Java, C/C++, Scala, Python"
+    ],
+    "fields": [
+      "Computer Science"
+    ],
+    "degree_requirements": [
+      "Bachelor’s or Master’s degree or equivalent in computer science or related field"
+    ],
+    "year_requirements": [
+      "2027 graduates"
+    ],
+    "stipend": null,
+    "prize_money": null,
+    "source": "rubrik.com",
+    "confidence": 0.95
+  },
+  {
+    "title": "Software Engineer Intern - Summer 2027",
+    "type": "internship",
+    "organization": "IMC Trading",
+    "description": "A 10-week internship for software engineering students, including educational trainings, a mentor, and a competitive compensation package with accommodations included.",
+    "source_url": "https://www.imc.com/us/careers/jobs/4823924101",
+    "application_url": "https://www.imc.com/us/careers/jobs/4823924101",
+    "deadline": null,
+    "start_date": null,
+    "location": "Not specified",
+    "remote": null,
+    "eligibility": [
+      "Current university student graduating between September 2027 - July 2028 that is pursuing a Computer Science, Engineering, or a related technology degree"
+    ],
+    "required_skills": [
+      "Strong knowledge of algorithms and data structures",
+      "Proficient experience in a programming language (Java or C++ preferred)",
+      "Strong analytical skills",
+      "Interest in solving complex problems programmatically",
+      "Desire to collaborate with technical and non-technical teammates in a dynamic environment"
+    ],
+    "fields": [
+      "Computer Science",
+      "Engineering",
+      "Software Engineering"
+    ],
+    "degree_requirements": [
+      "Computer Science, Engineering, or a related technology degree"
+    ],
+    "year_requirements": [
+      "Graduating between September 2027 - July 2028"
+    ],
+    "stipend": "Highly competitive compensation package with accommodations included",
+    "prize_money": null,
+    "source": "imc.com",
+    "confidence": 0.95
+  }
+]

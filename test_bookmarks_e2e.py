@@ -1,0 +1,158 @@
+"""End-to-end browser test for bookmark save / refresh / remove.
+
+Requires the FastAPI backend on port 8000 and the Vite dev server on
+port 5173. Uses the locally installed Microsoft Edge, so no Chromium
+download is required.
+"""
+
+import json
+import urllib.parse
+import urllib.request
+
+from playwright.sync_api import expect, sync_playwright
+
+APP_URL = "http://127.0.0.1:5173/"
+API_URL = "http://127.0.0.1:8000"
+
+
+def api_bookmarks() -> list[str]:
+    with urllib.request.urlopen(f"{API_URL}/api/bookmarks") as response:
+        return json.loads(response.read().decode("utf-8"))["bookmarks"]
+
+
+def set_api_bookmarks(urls: list[str]) -> None:
+    """Restore a known bookmark list through the public API."""
+    current = api_bookmarks()
+
+    for url in current:
+        if url not in urls:
+            request = urllib.request.Request(
+                f"{API_URL}/api/bookmarks?url={urllib.parse.quote(url, safe='')}",
+                method="DELETE",
+            )
+            urllib.request.urlopen(request).read()
+
+    for url in urls:
+        if url not in api_bookmarks():
+            request = urllib.request.Request(
+                f"{API_URL}/api/bookmarks",
+                data=json.dumps({"url": url}).encode("utf-8"),
+                headers={"Content-Type": "application/json"},
+                method="POST",
+            )
+            urllib.request.urlopen(request).read()
+
+
+def _run_browser_test(original_bookmarks: list[str]) -> int:
+    target_url = None
+    console_errors: list[str] = []
+
+    with sync_playwright() as playwright:
+        browser = playwright.chromium.launch(channel="msedge", headless=True)
+        page = browser.new_page()
+
+        page.on(
+            "console",
+            lambda message: console_errors.append(message.text)
+            if message.type == "error"
+            else None,
+        )
+
+        page.goto(APP_URL, wait_until="networkidle")
+
+        cards = page.locator(".opportunity-card")
+        expect(cards.first).to_be_visible(timeout=15_000)
+        card_count = cards.count()
+        assert card_count >= 1, "No opportunity cards rendered."
+        print(f"Rendered {card_count} opportunity card(s).")
+
+        # Pick a card that is not already bookmarked.
+        target = None
+        for index in range(card_count):
+            card = cards.nth(index)
+            button = card.locator(".bookmark-button")
+            if "Saved" not in button.inner_text():
+                target = card
+                break
+
+        assert target is not None, "Every rendered card was already saved."
+        title = target.locator("h3").inner_text()
+        target_url = target.get_attribute("data-source-url") or None
+
+        if not target_url:
+            # Fall back to matching the card title against the API data.
+            with urllib.request.urlopen(
+                f"{API_URL}/api/opportunities"
+            ) as response:
+                opportunities = json.loads(response.read().decode("utf-8"))[
+                    "opportunities"
+                ]
+            target_url = next(
+                item["source_url"]
+                for item in opportunities
+                if item["title"] == title
+            )
+
+        print(f"Testing bookmark flow for: {title}")
+
+        # 1. Save.
+        target.locator(".bookmark-button").click()
+        expect(target.locator(".bookmark-button")).to_contain_text(
+            "Saved", timeout=10_000
+        )
+        assert target_url in api_bookmarks(), "POST did not persist bookmark."
+        print("Save button persists the bookmark through the API.")
+
+        # 2. Reload and confirm the saved state survives.
+        page.reload(wait_until="networkidle")
+        reloaded = page.locator(".opportunity-card", has_text=title)
+        expect(reloaded.locator(".bookmark-button")).to_contain_text(
+            "Saved", timeout=10_000
+        )
+        print("Saved state survives a page refresh.")
+
+        # 3. Saved view shows the bookmark.
+        page.locator(
+            ".side-link", has_text="Saved opportunities"
+        ).click()
+        expect(page.locator(".opportunity-card", has_text=title)).to_be_visible(
+            timeout=10_000
+        )
+        saved_count = page.locator(".opportunity-card").count()
+        assert saved_count >= 1, "Saved view did not render any cards."
+        print(f"Saved view shows {saved_count} bookmarked card(s).")
+
+        # 4. Remove from the saved view and confirm it disappears.
+        saved_card = page.locator(".opportunity-card", has_text=title)
+        saved_card.locator(".bookmark-button").click()
+        expect(
+            page.locator(".opportunity-card", has_text=title)
+        ).to_have_count(0, timeout=10_000)
+        assert target_url not in api_bookmarks(), "DELETE did not remove bookmark."
+        print("Removing a bookmark updates storage and the Saved view.")
+
+        browser.close()
+
+    if console_errors:
+        print("Browser console errors:")
+        for error in console_errors:
+            print(f" - {error}")
+        return 1
+
+    print("All bookmark browser tests passed!")
+    return 0
+
+
+def main() -> int:
+    original_bookmarks = api_bookmarks()
+
+    try:
+        return _run_browser_test(original_bookmarks)
+    finally:
+        set_api_bookmarks(original_bookmarks)
+        assert api_bookmarks() == original_bookmarks, "Bookmark restore failed."
+        print("Original bookmarks restored.")
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
