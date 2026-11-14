@@ -15,10 +15,9 @@ structured records with Gemini; validates them; stores them in SQLite
 or PostgreSQL; and ranks them against a student profile in a React
 dashboard.
 
-This project grew out of the original
-[`hackathon-agent`](https://github.com/ramrock08-prog/hackathon-agent)
-drone-hackathon scout. The original search, AI filtering, link checking,
-email digest, and GitHub Actions ideas are preserved and generalized.
+This project grew out of an earlier drone-hackathon scout. Its search,
+AI filtering, link checking, email digest, and GitHub Actions ideas are
+preserved and generalized in Opportunity Agent.
 
 ![Opportunity Agent dashboard](docs/screenshots/dashboard.png)
 
