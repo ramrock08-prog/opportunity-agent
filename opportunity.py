@@ -3,7 +3,6 @@ from typing import Optional
 
 from text_utils import clean_list, clean_text
 
-
 ALLOWED_TYPES = {
     "hackathon",
     "internship",

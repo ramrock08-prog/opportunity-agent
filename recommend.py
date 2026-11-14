@@ -1,4 +1,5 @@
 ﻿from profile import load_profile
+
 from scorer import rank_opportunities
 from storage import load_opportunities
 from validator import validate_opportunity

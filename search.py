@@ -2,7 +2,6 @@
 
 from config import TAVILY_API_KEY
 
-
 SEARCH_QUERIES = {
     "hackathon": [
         "student hackathons India registration open 2026 2027",

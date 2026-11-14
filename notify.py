@@ -16,12 +16,11 @@ from datetime import date, datetime
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from pathlib import Path
+from profile import load_profile
 
 from config import RECEIVER_EMAIL, SENDER_EMAIL, SENDER_PASSWORD
-from profile import load_profile
 from storage import load_opportunities
 from validator import validate_opportunity
-
 
 DISCLAIMER = (
     "Opportunity Agent extracts listings automatically. A listing being "

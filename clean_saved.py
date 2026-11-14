@@ -7,9 +7,12 @@ snapshot that can be committed or inspected.
 
 from pathlib import Path
 
-from storage import export_opportunities_json, load_opportunities, save_opportunities
+from storage import (
+    export_opportunities_json,
+    load_opportunities,
+    save_opportunities,
+)
 from validator import validate_opportunity
-
 
 BACKUP_FILE = Path(__file__).with_name("opportunities.backup.json")
 

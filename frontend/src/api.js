@@ -1,8 +1,57 @@
+// Empty means "same origin". Vite proxies /api to FastAPI locally,
+// and the production build is served by FastAPI itself.
 const configuredBase = import.meta.env.VITE_API_BASE || "";
+const TOKEN_KEY = "opportunity_agent_token";
 
-export const API_BASE = (
-  configuredBase || "http://127.0.0.1:8000"
-).replace(/\/+$/, "");
+export const API_BASE = configuredBase.replace(/\/+$/, "");
+
+let authToken = "";
+
+function readStoredToken() {
+  try {
+    return window.localStorage.getItem(TOKEN_KEY) || "";
+  } catch {
+    return "";
+  }
+}
+
+export function getAuthToken() {
+  if (!authToken) authToken = readStoredToken();
+  return authToken;
+}
+
+export function setAuthToken(token) {
+  authToken = token || "";
+
+  try {
+    if (token) {
+      window.localStorage.setItem(TOKEN_KEY, token);
+    } else {
+      window.localStorage.removeItem(TOKEN_KEY);
+    }
+  } catch {
+    // Storage can be unavailable in private browsing; the in-memory
+    // token still works for this session.
+  }
+}
+
+export function clearAuthToken() {
+  setAuthToken("");
+}
+
+export function apiFetch(path, options = {}) {
+  const headers = { ...(options.headers || {}) };
+  const token = getAuthToken();
+
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  return fetch(`${API_BASE}${path}`, {
+    ...options,
+    headers,
+  });
+}
 
 export async function readJson(response) {
   try {

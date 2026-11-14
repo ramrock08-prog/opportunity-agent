@@ -4,7 +4,6 @@ import api
 from opportunity import Opportunity
 from storage import save_opportunities
 
-
 client = TestClient(api.app)
 
 

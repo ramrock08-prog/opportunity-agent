@@ -3,8 +3,12 @@ import sqlite3
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
-from database import LEGACY_PROFILE_FILE, get_connection, utc_now
-
+from database import (
+    DEMO_USER_ID,
+    LEGACY_PROFILE_FILE,
+    get_connection,
+    utc_now,
+)
 
 # Legacy JSON location, retained for migration and tooling.
 PROFILE_FILE = LEGACY_PROFILE_FILE
@@ -115,12 +119,18 @@ class UserProfile:
         return asdict(self)
 
 
-def load_profile() -> UserProfile:
-    """Load the profile, or return defaults if none exists yet."""
+def load_profile(
+    user_id: int = DEMO_USER_ID,
+) -> UserProfile:
+    """Load one user's profile, or defaults if none exists yet."""
     try:
         with get_connection() as connection:
             row = connection.execute(
-                "SELECT payload FROM profile WHERE id = 1"
+                """
+                SELECT payload FROM user_profiles
+                WHERE user_id = ?
+                """,
+                (user_id,),
             ).fetchone()
     except sqlite3.Error as error:
         raise RuntimeError("Could not read the profile.") from error
@@ -148,8 +158,11 @@ def load_profile() -> UserProfile:
     return UserProfile(**clean_data)
 
 
-def save_profile(profile: UserProfile) -> None:
-    """Validate and save a profile in SQLite."""
+def save_profile(
+    profile: UserProfile,
+    user_id: int = DEMO_USER_ID,
+) -> None:
+    """Validate and save one user's profile in SQLite."""
     if not isinstance(profile, UserProfile):
         raise TypeError("profile must be a UserProfile instance.")
 
@@ -157,13 +170,14 @@ def save_profile(profile: UserProfile) -> None:
         with get_connection() as connection:
             connection.execute(
                 """
-                INSERT INTO profile(id, payload, updated_at)
-                VALUES(1, ?, ?)
-                ON CONFLICT(id) DO UPDATE SET
+                INSERT INTO user_profiles(user_id, payload, updated_at)
+                VALUES(?, ?, ?)
+                ON CONFLICT(user_id) DO UPDATE SET
                     payload = excluded.payload,
                     updated_at = excluded.updated_at
                 """,
                 (
+                    user_id,
                     json.dumps(
                         profile.to_dict(), ensure_ascii=False
                     ),

@@ -1,14 +1,27 @@
 ﻿import threading
+from pathlib import Path
+from profile import UserProfile, load_profile, save_profile
 
-from bookmarks import add_bookmark, load_bookmarks, remove_bookmark
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from config import ALLOWED_ORIGINS
+from auth import (
+    auth_configuration_warning,
+    auth_mode_label,
+    authenticate_user,
+    create_user,
+    decode_token,
+    get_user_by_id,
+    issue_token,
+)
+from bookmarks import add_bookmark, load_bookmarks, remove_bookmark
+from config import ALLOWED_ORIGINS, AUTH_REQUIRED, SERVE_FRONTEND
+from database import DEMO_USER_EMAIL, DEMO_USER_ID
 from database import healthcheck as database_healthcheck
 from opportunity import ALLOWED_TYPES
-from profile import UserProfile, load_profile, save_profile
 from run_agent import run_agent as execute_discovery
 from scorer import rank_opportunities
 from search import SEARCH_QUERIES
@@ -55,6 +68,68 @@ class VerifyRequest(BaseModel):
     source_url: str
 
 
+class RegisterRequest(BaseModel):
+    email: str = Field(min_length=3, max_length=254)
+    password: str = Field(min_length=8, max_length=128)
+    name: str = Field(default="", max_length=100)
+
+
+class LoginRequest(BaseModel):
+    email: str = Field(min_length=3, max_length=254)
+    password: str = Field(min_length=1, max_length=128)
+
+
+DEMO_USER = {
+    "id": DEMO_USER_ID,
+    "email": DEMO_USER_EMAIL,
+    "name": "Demo Student",
+    "created_at": "",
+    "demo": True,
+}
+
+
+def current_user(request: Request) -> dict:
+    """Resolve the caller: demo user locally, JWT in auth mode."""
+    if not AUTH_REQUIRED:
+        return DEMO_USER
+
+    header = request.headers.get("Authorization", "")
+    scheme, _, token = header.partition(" ")
+
+    if scheme.lower() != "bearer" or not token.strip():
+        raise HTTPException(
+            status_code=401,
+            detail="Sign in to access this resource.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    claims = decode_token(token.strip())
+
+    if not claims:
+        raise HTTPException(
+            status_code=401,
+            detail="Your session is invalid or has expired.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    try:
+        user = get_user_by_id(int(claims.get("sub", "0")))
+    except (TypeError, ValueError, RuntimeError) as error:
+        raise HTTPException(
+            status_code=401,
+            detail="Your session is invalid or has expired.",
+        ) from error
+
+    if user is None:
+        raise HTTPException(
+            status_code=401,
+            detail="Your session is invalid or has expired.",
+        )
+
+    user["demo"] = False
+    return user
+
+
 # Only one discovery job may write at a time in this process. This avoids
 # two requests replacing the opportunity collection simultaneously.
 _discovery_lock = threading.Lock()
@@ -63,7 +138,7 @@ _discovery_lock = threading.Lock()
 app = FastAPI(
     title="Opportunity Agent API",
     description="Discover, validate, and recommend opportunities for students.",
-    version="1.1.0",
+    version="2.0.0",
 )
 
 app.add_middleware(
@@ -96,8 +171,25 @@ def get_valid_opportunities():
     return valid
 
 
+FRONTEND_DIST = Path(__file__).with_name("frontend") / "dist"
+FRONTEND_INDEX = FRONTEND_DIST / "index.html"
+
+
 @app.get("/")
 def home():
+    if SERVE_FRONTEND and FRONTEND_INDEX.exists():
+        return FileResponse(FRONTEND_INDEX)
+
+    return {
+        "app": "Opportunity Agent",
+        "message": "Backend is running.",
+        "docs": "/docs",
+        "frontend": "run the Vite dev server on port 5173",
+    }
+
+
+@app.get("/api")
+def api_home():
     return {
         "app": "Opportunity Agent",
         "message": "Backend is running.",
@@ -113,13 +205,90 @@ def health():
         "status": "ok" if database_ready else "degraded",
         "app": "Opportunity Agent",
         "storage": "sqlite" if database_ready else "unavailable",
+        "auth": auth_mode_label(),
+        "auth_warning": auth_configuration_warning(),
     }
 
-@app.get("/api/bookmarks")
-def get_bookmarks():
-    """Return saved bookmark URLs."""
+
+@app.get("/api/auth/status")
+def auth_status():
+    """Let the frontend discover whether sign-in is required."""
+    return {
+        "auth_required": AUTH_REQUIRED,
+        "mode": auth_mode_label(),
+        "warning": auth_configuration_warning(),
+    }
+
+
+@app.post("/api/auth/register")
+def register(request: RegisterRequest):
+    """Create an account and return a bearer token."""
     try:
-        bookmarks = load_bookmarks()
+        user = create_user(
+            request.email,
+            request.password,
+            request.name,
+        )
+    except ValueError as error:
+        status_code = (
+            409
+            if "already exists" in str(error)
+            else 422
+        )
+        raise HTTPException(
+            status_code=status_code,
+            detail=str(error),
+        ) from error
+    except RuntimeError as error:
+        raise HTTPException(
+            status_code=500,
+            detail="The account could not be created.",
+        ) from error
+
+    return {
+        "status": "registered",
+        "token": issue_token(user),
+        "user": user,
+    }
+
+
+@app.post("/api/auth/login")
+def login(request: LoginRequest):
+    """Exchange email and password for a bearer token."""
+    try:
+        user = authenticate_user(
+            request.email, request.password
+        )
+    except RuntimeError as error:
+        raise HTTPException(
+            status_code=500,
+            detail="Sign-in could not be completed.",
+        ) from error
+
+    if user is None:
+        raise HTTPException(
+            status_code=401,
+            detail="Email or password is incorrect.",
+        )
+
+    return {
+        "status": "authenticated",
+        "token": issue_token(user),
+        "user": user,
+    }
+
+
+@app.get("/api/auth/me")
+def me(user: dict = Depends(current_user)):
+    """Return the signed-in user's public profile."""
+    return {"user": user}
+
+
+@app.get("/api/bookmarks")
+def get_bookmarks(user: dict = Depends(current_user)):
+    """Return the current user's saved bookmark URLs."""
+    try:
+        bookmarks = load_bookmarks(user["id"])
         return {
             "count": len(bookmarks),
             "bookmarks": bookmarks,
@@ -132,10 +301,13 @@ def get_bookmarks():
 
 
 @app.post("/api/bookmarks")
-def create_bookmark(request: BookmarkRequest):
-    """Save an opportunity URL."""
+def create_bookmark(
+    request: BookmarkRequest,
+    user: dict = Depends(current_user),
+):
+    """Save an opportunity URL for the current user."""
     try:
-        bookmarks = add_bookmark(request.url)
+        bookmarks = add_bookmark(request.url, user["id"])
         return {
             "status": "saved",
             "count": len(bookmarks),
@@ -154,10 +326,13 @@ def create_bookmark(request: BookmarkRequest):
 
 
 @app.delete("/api/bookmarks")
-def delete_bookmark(url: str):
-    """Remove an opportunity URL from bookmarks."""
+def delete_bookmark(
+    url: str,
+    user: dict = Depends(current_user),
+):
+    """Remove an opportunity URL from the current user's bookmarks."""
     try:
-        bookmarks = remove_bookmark(url)
+        bookmarks = remove_bookmark(url, user["id"])
         return {
             "status": "removed",
             "count": len(bookmarks),
@@ -169,12 +344,13 @@ def delete_bookmark(url: str):
             detail="Unable to remove bookmark.",
         ) from error
 
+
 @app.get("/api/profile")
-def get_profile():
-    """Return the currently configured user profile."""
+def get_profile(user: dict = Depends(current_user)):
+    """Return the current user's profile."""
 
     try:
-        return load_profile().to_dict()
+        return load_profile(user["id"]).to_dict()
     except (RuntimeError, OSError, ValueError) as error:
         raise HTTPException(
             status_code=500,
@@ -183,12 +359,15 @@ def get_profile():
 
 
 @app.put("/api/profile")
-def update_profile(request: ProfileUpdate):
-    """Validate and save an updated user profile."""
+def update_profile(
+    request: ProfileUpdate,
+    user: dict = Depends(current_user),
+):
+    """Validate and save the current user's profile."""
 
     try:
         profile = UserProfile(**request.model_dump())
-        save_profile(profile)
+        save_profile(profile, user["id"])
         return {
             "status": "saved",
             "profile": profile.to_dict(),
@@ -198,7 +377,7 @@ def update_profile(request: ProfileUpdate):
             status_code=422,
             detail=str(error),
         ) from error
-    except OSError as error:
+    except (RuntimeError, OSError) as error:
         raise HTTPException(
             status_code=500,
             detail="Unable to save the user profile.",
@@ -206,7 +385,10 @@ def update_profile(request: ProfileUpdate):
 
 
 @app.post("/api/discover")
-def discover(request: DiscoveryRequest):
+def discover(
+    request: DiscoveryRequest,
+    user: dict = Depends(current_user),
+):
     """Run a limited discovery job from the website."""
 
     category = request.category.strip().lower()
@@ -312,11 +494,11 @@ def get_opportunities(category: str | None = None):
 
 
 @app.get("/api/recommendations")
-def get_recommendations():
-    """Rank saved opportunities against the user profile."""
+def get_recommendations(user: dict = Depends(current_user)):
+    """Rank saved opportunities against the current user's profile."""
 
     try:
-        profile = load_profile()
+        profile = load_profile(user["id"])
         opportunities = get_valid_opportunities()
         ranked = rank_opportunities(opportunities, profile)
     except (RuntimeError, OSError, ValueError) as error:
@@ -343,3 +525,12 @@ def get_recommendations():
             for item in ranked
         ],
     }
+
+# Serve the production React build when explicitly enabled. API routes
+# are declared first, so they take precedence over the static mount.
+if SERVE_FRONTEND and FRONTEND_DIST.is_dir():
+    app.mount(
+        "/",
+        StaticFiles(directory=FRONTEND_DIST, html=True),
+        name="frontend",
+    )

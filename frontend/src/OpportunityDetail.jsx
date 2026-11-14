@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { API_BASE, errorMessage, readJson } from "./api";
+import { apiFetch, errorMessage, readJson } from "./api";
 import {
   deadlineLabel,
   formatDate,
@@ -61,8 +61,8 @@ export default function OpportunityDetail({
     setVerifyError("");
 
     try {
-      const response = await fetch(
-        `${API_BASE}/api/opportunities/verify`,
+      const response = await apiFetch(
+        "/api/opportunities/verify",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

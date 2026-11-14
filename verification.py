@@ -9,13 +9,12 @@ that limitation.
 import ipaddress
 import socket
 from datetime import date, datetime, timezone
-from urllib.parse import urlparse
+from urllib.parse import urljoin, urlparse
 
 import requests
 
 from opportunity import Opportunity
 from validator import SOCIAL_MEDIA_HOSTS, valid_http_url
-
 
 USER_AGENT = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -108,33 +107,80 @@ def check_url(url: str, timeout: int = 12) -> dict:
         )
         return result
 
+    current_url = url.strip()
+    redirect_codes = {301, 302, 303, 307, 308}
+
     try:
-        response = requests.get(
-            url.strip(),
-            headers={"User-Agent": USER_AGENT},
-            timeout=(5, timeout),
-            allow_redirects=True,
-            stream=True,
-        )
+        for _hop in range(6):
+            hop_host = _hostname(current_url)
 
-        status_code = response.status_code
-        final_url = response.url
+            if not _is_public_hostname(hop_host):
+                result.update(
+                    status="blocked",
+                    message=(
+                        "A redirect pointed to a non-public host, so "
+                        "the check stopped."
+                    ),
+                )
+                return result
 
-        # Read only a small prefix so we never download a large file.
-        next(response.iter_content(1024), None)
-        response.close()
+            response = requests.get(
+                current_url,
+                headers={"User-Agent": USER_AGENT},
+                timeout=(5, timeout),
+                allow_redirects=False,
+                stream=True,
+            )
+
+            status_code = response.status_code
+            final_url = current_url
+
+            if status_code in redirect_codes:
+                location = response.headers.get("Location", "").strip()
+                response.close()
+
+                if not location:
+                    result.update(
+                        status="unreachable",
+                        message=(
+                            "The page returned a redirect without a "
+                            "destination."
+                        ),
+                    )
+                    return result
+
+                current_url = urljoin(current_url, location)
+
+                if urlparse(current_url).scheme not in {
+                    "http",
+                    "https",
+                }:
+                    result.update(
+                        status="blocked",
+                        message=(
+                            "A redirect used an unsupported scheme, so "
+                            "the check stopped."
+                        ),
+                    )
+                    return result
+
+                continue
+
+            # Read only a small prefix so we never download a large file.
+            next(response.iter_content(1024), None)
+            response.close()
+            break
+        else:
+            result.update(
+                status="unreachable",
+                message="The page redirected too many times.",
+            )
+            return result
 
     except requests.Timeout:
         result.update(
             status="timeout",
             message="The page did not respond before the timeout.",
-        )
-        return result
-
-    except requests.TooManyRedirects:
-        result.update(
-            status="unreachable",
-            message="The page redirected too many times.",
         )
         return result
 

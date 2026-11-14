@@ -1,4 +1,5 @@
 ﻿import os
+
 from dotenv import load_dotenv
 
 # Load settings from the local .env file, if present.
@@ -25,6 +26,29 @@ ALLOWED_ORIGINS = _parse_origins(
         "http://localhost:5173,http://127.0.0.1:5173",
     )
 )
+
+# Authentication is opt-in for local development. Set AUTH_REQUIRED=1
+# and provide a long random AUTH_SECRET before a public deployment.
+AUTH_REQUIRED = os.getenv("AUTH_REQUIRED", "0").strip().lower() in {
+    "1",
+    "true",
+    "yes",
+    "on",
+}
+
+AUTH_SECRET = os.getenv("AUTH_SECRET", "").strip()
+AUTH_TOKEN_MINUTES = int(
+    os.getenv("AUTH_TOKEN_MINUTES", "10080")
+)
+
+# When enabled, FastAPI serves frontend/dist at the site root. Docker
+# images set this to 1 after building the React app.
+SERVE_FRONTEND = os.getenv("SERVE_FRONTEND", "0").strip().lower() in {
+    "1",
+    "true",
+    "yes",
+    "on",
+}
 
 # AI configuration
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")

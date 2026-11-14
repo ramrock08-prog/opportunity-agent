@@ -1,7 +1,7 @@
 ﻿import re
+from profile import UserProfile
 
 from opportunity import Opportunity
-from profile import UserProfile
 
 
 def contains_term(term: str, text: str) -> bool:

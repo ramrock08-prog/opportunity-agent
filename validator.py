@@ -1,8 +1,7 @@
 from datetime import date, datetime
 from urllib.parse import urlparse
 
-from opportunity import Opportunity, ALLOWED_TYPES
-
+from opportunity import ALLOWED_TYPES, Opportunity
 
 SOCIAL_MEDIA_HOSTS = {
     "instagram.com",

@@ -1,4 +1,5 @@
 ﻿import requests
+
 from config import TAVILY_API_KEY
 
 if not TAVILY_API_KEY:

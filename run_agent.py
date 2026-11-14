@@ -1,8 +1,8 @@
 ﻿import argparse
 
-from search import SEARCH_QUERIES, search_category
 from ai import extract_opportunity
 from dedup import deduplicate_opportunities
+from search import SEARCH_QUERIES, search_category
 from storage import load_opportunities, save_opportunities
 from validator import validate_opportunity
 

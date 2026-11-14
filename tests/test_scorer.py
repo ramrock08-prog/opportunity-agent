@@ -1,5 +1,6 @@
-from opportunity import Opportunity
 from profile import UserProfile
+
+from opportunity import Opportunity
 from scorer import rank_opportunities, score_opportunity
 
 

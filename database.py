@@ -17,7 +17,6 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterator
 
-
 BASE_DIR = Path(__file__).resolve().parent
 DEFAULT_DB_PATH = BASE_DIR / "data" / "opportunity_agent.db"
 
@@ -25,7 +24,9 @@ LEGACY_OPPORTUNITIES_FILE = BASE_DIR / "opportunities.json"
 LEGACY_BOOKMARKS_FILE = BASE_DIR / "bookmarks.json"
 LEGACY_PROFILE_FILE = BASE_DIR / "profile.json"
 
-SCHEMA_VERSION = "1"
+SCHEMA_VERSION = "2"
+DEMO_USER_ID = 1
+DEMO_USER_EMAIL = "demo@opportunity.local"
 
 _initialized_paths: set[str] = set()
 
@@ -118,8 +119,49 @@ def _ensure_schema(path: Path) -> None:
                 payload TEXT NOT NULL,
                 updated_at TEXT NOT NULL
             );
+
+            CREATE TABLE IF NOT EXISTS users (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                email TEXT NOT NULL UNIQUE,
+                password_hash TEXT NOT NULL DEFAULT '',
+                display_name TEXT NOT NULL DEFAULT '',
+                created_at TEXT NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS user_profiles (
+                user_id INTEGER PRIMARY KEY,
+                payload TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                FOREIGN KEY (user_id) REFERENCES users(id)
+                    ON DELETE CASCADE
+            );
+
+            CREATE TABLE IF NOT EXISTS user_bookmarks (
+                user_id INTEGER NOT NULL,
+                url TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                PRIMARY KEY (user_id, url),
+                FOREIGN KEY (user_id) REFERENCES users(id)
+                    ON DELETE CASCADE
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_user_bookmarks_user
+                ON user_bookmarks(user_id);
             """
         )
+
+        # The demo user owns pre-authentication local data. It cannot
+        # sign in because its password hash is empty.
+        connection.execute(
+            """
+            INSERT OR IGNORE INTO users(
+                id, email, password_hash, display_name, created_at
+            ) VALUES(?, ?, '', 'Demo Student', ?)
+            """,
+            (DEMO_USER_ID, DEMO_USER_EMAIL, utc_now()),
+        )
+
+        _migrate_v1_user_data(connection)
 
         connection.execute(
             """
@@ -149,6 +191,54 @@ def _ensure_schema(path: Path) -> None:
         connection.close()
 
     _initialized_paths.add(key)
+
+
+def _table_exists(
+    connection: sqlite3.Connection, name: str
+) -> bool:
+    row = connection.execute(
+        """
+        SELECT name FROM sqlite_master
+        WHERE type = 'table' AND name = ?
+        """,
+        (name,),
+    ).fetchone()
+    return row is not None
+
+
+def _migrate_v1_user_data(connection: sqlite3.Connection) -> None:
+    """Copy single-user profile/bookmarks into the demo account.
+
+    The old tables are left in place as a rollback aid; application
+    code only reads the per-user tables after this migration.
+    """
+    if _table_exists(connection, "profile"):
+        row = connection.execute(
+            "SELECT payload FROM profile WHERE id = 1"
+        ).fetchone()
+
+        if row is not None:
+            connection.execute(
+                """
+                INSERT OR IGNORE INTO user_profiles(
+                    user_id, payload, updated_at
+                ) VALUES(?, ?, ?)
+                """,
+                (DEMO_USER_ID, row["payload"], utc_now()),
+            )
+
+    if _table_exists(connection, "bookmarks"):
+        for row in connection.execute(
+            "SELECT url, created_at FROM bookmarks"
+        ).fetchall():
+            connection.execute(
+                """
+                INSERT OR IGNORE INTO user_bookmarks(
+                    user_id, url, created_at
+                ) VALUES(?, ?, ?)
+                """,
+                (DEMO_USER_ID, row["url"], row["created_at"]),
+            )
 
 
 def _import_legacy_json(connection: sqlite3.Connection) -> None:
@@ -213,10 +303,15 @@ def _import_legacy_json(connection: sqlite3.Connection) -> None:
         if isinstance(profile, dict):
             connection.execute(
                 """
-                INSERT OR IGNORE INTO profile(id, payload, updated_at)
-                VALUES(1, ?, ?)
+                INSERT OR IGNORE INTO user_profiles(
+                    user_id, payload, updated_at
+                ) VALUES(?, ?, ?)
                 """,
-                (json.dumps(profile, ensure_ascii=False), now),
+                (
+                    DEMO_USER_ID,
+                    json.dumps(profile, ensure_ascii=False),
+                    now,
+                ),
             )
 
     if LEGACY_BOOKMARKS_FILE.exists():
@@ -232,10 +327,11 @@ def _import_legacy_json(connection: sqlite3.Connection) -> None:
                 if isinstance(url, str) and url.strip():
                     connection.execute(
                         """
-                        INSERT OR IGNORE INTO bookmarks(url, created_at)
-                        VALUES(?, ?)
+                        INSERT OR IGNORE INTO user_bookmarks(
+                            user_id, url, created_at
+                        ) VALUES(?, ?, ?)
                         """,
-                        (url.strip(), now),
+                        (DEMO_USER_ID, url.strip(), now),
                     )
 
 

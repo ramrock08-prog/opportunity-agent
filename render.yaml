@@ -1,0 +1,33 @@
+services:
+  - type: web
+    name: opportunity-agent
+    runtime: docker
+    plan: starter
+    healthCheckPath: /api/health
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: SERVE_FRONTEND
+        value: "1"
+      - key: AUTH_REQUIRED
+        value: "1"
+      - key: AUTH_SECRET
+        generateValue: true
+      - key: CORS_ORIGINS
+        value: https://opportunity-agent.onrender.com
+      - key: OPPORTUNITY_DB_PATH
+        value: /app/data/opportunity_agent.db
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: TAVILY_API_KEY
+        sync: false
+      - key: SENDER_EMAIL
+        sync: false
+      - key: SENDER_PASSWORD
+        sync: false
+      - key: RECEIVER_EMAIL
+        sync: false
+    disk:
+      name: opportunity-data
+      mountPath: /app/data
+      sizeGB: 1

@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-import { API_BASE, errorMessage, readJson } from "./api";
+import { apiFetch, errorMessage, readJson } from "./api";
 
 const TYPES = [
   "hackathon",
@@ -51,7 +51,7 @@ export default function ProfileEditor({ onSaved }) {
     setLoading(true);
 
     try {
-      const response = await fetch(`${API_BASE}/api/profile`);
+      const response = await apiFetch("/api/profile");
       const data = await readJson(response);
 
       if (!response.ok) {
@@ -109,7 +109,7 @@ export default function ProfileEditor({ onSaved }) {
     };
 
     try {
-      const response = await fetch(`${API_BASE}/api/profile`, {
+      const response = await apiFetch("/api/profile", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

@@ -4,7 +4,14 @@ import "./App.css";
 import OpportunityCard from "./OpportunityCard";
 import OpportunityDetail from "./OpportunityDetail";
 import ProfileEditor from "./ProfileEditor";
-import { API_BASE, errorMessage, readJson } from "./api";
+import AuthScreen from "./AuthScreen";
+import {
+  apiFetch,
+  clearAuthToken,
+  errorMessage,
+  getAuthToken,
+  readJson,
+} from "./api";
 
 const CATEGORIES = [
   { label: "All opportunities", value: "all" },
@@ -41,8 +48,60 @@ function App() {
   const [discovering, setDiscovering] = useState(false);
   const [discoveryMessage, setDiscoveryMessage] = useState("");
 
+  // Authentication state
+  const [authStatus, setAuthStatus] = useState(null);
+  const [authUser, setAuthUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [authReloadKey, setAuthReloadKey] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function bootstrapAuth() {
+      try {
+        const response = await apiFetch("/api/auth/status");
+        const data = await readJson(response);
+
+        if (cancelled) return;
+
+        setAuthStatus(data);
+
+        if (data.auth_required && getAuthToken()) {
+          const meResponse = await apiFetch("/api/auth/me");
+
+          if (meResponse.ok) {
+            const meData = await readJson(meResponse);
+            if (!cancelled) setAuthUser(meData.user || null);
+          } else {
+            clearAuthToken();
+          }
+        }
+      } catch {
+        if (!cancelled) {
+          setError(
+            "Unable to connect to the backend. Make sure FastAPI is running on port 8000."
+          );
+        }
+      } finally {
+        if (!cancelled) setAuthLoading(false);
+      }
+    }
+
+    bootstrapAuth();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [authReloadKey]);
+
   // Load opportunities, recommendations, and bookmarks
   useEffect(() => {
+    if (authLoading || !authStatus) return undefined;
+
+    if (authStatus.auth_required && !authUser) {
+      return undefined;
+    }
+
     let cancelled = false;
 
     async function loadDashboard() {
@@ -55,10 +114,19 @@ function App() {
           recommendationsResponse,
           bookmarksResponse,
         ] = await Promise.all([
-          fetch(`${API_BASE}/api/opportunities`),
-          fetch(`${API_BASE}/api/recommendations`),
-          fetch(`${API_BASE}/api/bookmarks`),
+          apiFetch("/api/opportunities"),
+          apiFetch("/api/recommendations"),
+          apiFetch("/api/bookmarks"),
         ]);
+
+        if (
+          [opportunitiesResponse, recommendationsResponse, bookmarksResponse]
+            .some((response) => response.status === 401)
+        ) {
+          clearAuthToken();
+          if (!cancelled) setAuthUser(null);
+          return;
+        }
 
         if (
           !opportunitiesResponse.ok ||
@@ -104,7 +172,7 @@ function App() {
     return () => {
       cancelled = true;
     };
-  }, [reloadKey]);
+  }, [reloadKey, authLoading, authStatus, authUser]);
 
   // Trigger a limited discovery run
   async function handleDiscover() {
@@ -115,7 +183,7 @@ function App() {
       const category =
         activeCategory === "all" ? "internship" : activeCategory;
 
-      const response = await fetch(`${API_BASE}/api/discover`, {
+      const response = await apiFetch("/api/discover", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -170,11 +238,11 @@ function App() {
 
     try {
       const response = isSaved
-        ? await fetch(
-            `${API_BASE}/api/bookmarks?url=${encodeURIComponent(url)}`,
+        ? await apiFetch(
+            `/api/bookmarks?url=${encodeURIComponent(url)}`,
             { method: "DELETE" }
           )
-        : await fetch(`${API_BASE}/api/bookmarks`, {
+        : await apiFetch("/api/bookmarks", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -207,6 +275,27 @@ function App() {
         [url]: false,
       }));
     }
+  }
+
+  function retryConnection() {
+    setAuthReloadKey((value) => value + 1);
+    setReloadKey((value) => value + 1);
+  }
+
+  function handleLogout() {
+    clearAuthToken();
+    setAuthUser(null);
+    setOpportunities([]);
+    setRecommendations([]);
+    setBookmarks([]);
+    setProfile(null);
+    setDetailItem(null);
+    setActiveView("discover");
+  }
+
+  function handleAuthenticated(user) {
+    setAuthUser(user);
+    setReloadKey((value) => value + 1);
   }
 
   // Filter opportunities and attach their recommendation scores
@@ -312,6 +401,24 @@ function App() {
     opportunities.map((item) => item.type)
   ).size;
 
+  if (authLoading) {
+    return (
+      <div className="auth-loading">
+        <div className="loading-spinner" />
+        <p>Preparing your workspace...</p>
+      </div>
+    );
+  }
+
+  if (authStatus?.auth_required && !authUser) {
+    return (
+      <AuthScreen
+        warning={authStatus.warning}
+        onAuthenticated={handleAuthenticated}
+      />
+    );
+  }
+
   const averageScore = recommendations.length
     ? Math.round(
         recommendations.reduce(
@@ -368,10 +475,22 @@ function App() {
         <div className="sidebar-label second-label">YOUR PROFILE</div>
 
         <div className="profile-mini">
-          <div className="avatar">R</div>
+          <div className="avatar">
+            {(
+              authUser?.name ||
+              authUser?.email ||
+              profile?.name ||
+              "S"
+            )
+              .charAt(0)
+              .toUpperCase()}
+          </div>
           <div>
             <strong>
-              {profile?.degree || "Student"} {profile?.branch || ""}
+              {authUser?.name ||
+                `${profile?.degree || "Student"} ${
+                  profile?.branch || ""
+                }`}
             </strong>
             <span>
               {profile?.year_of_study
@@ -379,6 +498,17 @@ function App() {
                 : "Student profile"}
             </span>
           </div>
+        </div>
+
+        <div className="account-box">
+          {authStatus?.auth_required ? (
+            <>
+              <span title={authUser?.email}>{authUser?.email}</span>
+              <button onClick={handleLogout}>Sign out</button>
+            </>
+          ) : (
+            <span>Demo workspace · sign-in disabled</span>
+          )}
         </div>
 
         <div className="sidebar-bottom">
@@ -474,9 +604,7 @@ function App() {
           <div className="error-banner">
             <strong>Connection problem</strong>
             <span>{error}</span>
-            <button onClick={() => setReloadKey((value) => value + 1)}>
-              Retry
-            </button>
+            <button onClick={retryConnection}>Retry</button>
           </div>
         )}
 

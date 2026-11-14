@@ -5,11 +5,30 @@ from urllib.parse import urlparse
 from google import genai
 
 from config import GEMINI_API_KEY, GEMINI_MODEL
-from opportunity import Opportunity, ALLOWED_TYPES
+from opportunity import ALLOWED_TYPES, Opportunity
 from validator import validate_opportunity
 
+_client = None
 
-client = genai.Client(api_key=GEMINI_API_KEY)
+
+def get_client():
+    """Create the Gemini client lazily.
+
+    The API must start even when discovery keys are missing, so that
+    the dashboard, documentation, and health checks remain available.
+    """
+    global _client
+
+    if not GEMINI_API_KEY:
+        raise RuntimeError(
+            "GEMINI_API_KEY is missing. Configure it in .env before "
+            "running discovery."
+        )
+
+    if _client is None:
+        _client = genai.Client(api_key=GEMINI_API_KEY)
+
+    return _client
 
 
 def _as_list(value) -> list[str]:
@@ -42,6 +61,8 @@ def extract_opportunity(result: dict) -> Optional[Opportunity]:
 
     if not title or not url:
         return None
+
+    client = get_client()
 
     prompt = f"""
 You are an information extraction system for a student

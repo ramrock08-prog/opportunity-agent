@@ -1,8 +1,8 @@
 import json
+from profile import UserProfile, load_profile, save_profile
 
 from bookmarks import add_bookmark, load_bookmarks, remove_bookmark
 from opportunity import Opportunity
-from profile import UserProfile, load_profile, save_profile
 from storage import (
     export_opportunities_json,
     load_opportunities,
@@ -41,6 +41,17 @@ def test_opportunities_round_trip(isolated_db):
         "ML Hackathon",
     ]
     assert loaded[0].required_skills == ["Python"]
+
+
+def test_saving_duplicate_keys_does_not_abort(isolated_db):
+    save_opportunities([
+        make_opportunity(),
+        make_opportunity(title="Same URL, different title"),
+    ])
+
+    loaded = load_opportunities()
+    assert len(loaded) == 1
+    assert loaded[0].title == "AI Research Intern"
 
 
 def test_saving_replaces_collection_and_export_works(

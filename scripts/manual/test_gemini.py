@@ -1,4 +1,5 @@
 ﻿from google import genai
+
 from config import GEMINI_API_KEY, GEMINI_MODEL
 
 if not GEMINI_API_KEY:

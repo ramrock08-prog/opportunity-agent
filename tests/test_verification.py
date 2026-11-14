@@ -9,9 +9,15 @@ from verification import (
 
 
 class FakeResponse:
-    def __init__(self, status_code, url="https://example.com/final"):
+    def __init__(
+        self,
+        status_code,
+        url="https://example.com/final",
+        headers=None,
+    ):
         self.status_code = status_code
         self.url = url
+        self.headers = headers or {}
 
     def iter_content(self, size):
         return iter([b"ok"])
@@ -77,6 +83,50 @@ def test_blocked_page(monkeypatch):
 
     assert result["status"] == "blocked"
     assert "normal browser" in result["message"]
+
+
+def test_redirect_to_private_host_is_blocked(monkeypatch):
+    monkeypatch.setattr(
+        "verification._is_public_hostname",
+        lambda host: host != "127.0.0.1",
+    )
+    monkeypatch.setattr(
+        "verification.requests.get",
+        lambda *args, **kwargs: FakeResponse(
+            302, headers={"Location": "http://127.0.0.1/secret"}
+        ),
+    )
+
+    result = check_url("https://example.com/job")
+
+    assert result["status"] == "blocked"
+    assert "non-public host" in result["message"]
+
+
+def test_public_redirect_is_followed(monkeypatch):
+    calls = []
+
+    def fake_get(url, **kwargs):
+        calls.append(url)
+        if len(calls) == 1:
+            return FakeResponse(
+                302, headers={"Location": "/final"}
+            )
+        return FakeResponse(200)
+
+    monkeypatch.setattr(
+        "verification._is_public_hostname", lambda host: True
+    )
+    monkeypatch.setattr("verification.requests.get", fake_get)
+
+    result = check_url("https://example.com/job")
+
+    assert result["status"] == "reachable"
+    assert result["final_url"] == "https://example.com/final"
+    assert calls == [
+        "https://example.com/job",
+        "https://example.com/final",
+    ]
 
 
 def test_verify_opportunity_reports_both_links(monkeypatch):

@@ -11,7 +11,6 @@ from database import (
 from dedup import normalize_url
 from opportunity import ALLOWED_TYPES, Opportunity
 
-
 # Kept as the legacy JSON snapshot location. Runtime storage is SQLite.
 DATA_FILE = LEGACY_OPPORTUNITIES_FILE
 
@@ -95,6 +94,7 @@ def save_opportunities(
 ) -> None:
     """Replace the opportunity collection in one transaction."""
     rows = []
+    seen_keys = set()
 
     for opportunity in opportunities:
         if not isinstance(opportunity, Opportunity):
@@ -103,12 +103,21 @@ def save_opportunities(
         if opportunity.type not in ALLOWED_TYPES:
             raise ValueError(f"Unsupported type: {opportunity.type}")
 
+        key = source_key(
+            opportunity.source_url,
+            opportunity.title,
+            opportunity.organization,
+        )
+
+        # Defensive guard: the database key is unique, so never let a
+        # caller-supplied duplicate abort the whole transaction.
+        if key in seen_keys:
+            continue
+
+        seen_keys.add(key)
+
         rows.append((
-            source_key(
-                opportunity.source_url,
-                opportunity.title,
-                opportunity.organization,
-            ),
+            key,
             opportunity.source_url,
             opportunity.title,
             opportunity.type,

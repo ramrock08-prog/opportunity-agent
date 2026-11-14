@@ -2,7 +2,6 @@
 
 import re
 
-
 _WHITESPACE = re.compile(r"\s+")
 _POSSESSIVE_ARTIFACT = re.compile(r"(?<=[A-Za-z])\ufffd+s\b")
 

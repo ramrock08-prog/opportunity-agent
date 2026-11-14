@@ -1,5 +1,5 @@
-﻿from search import search_category
-from ai import extract_opportunity
+﻿from ai import extract_opportunity
+from search import search_category
 
 print("Searching for an internship...")
 results = search_category("internship", max_results_per_query=1)
