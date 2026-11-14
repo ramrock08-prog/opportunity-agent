@@ -8,15 +8,19 @@ Browser (React + Vite)
    |  same-origin /api (Vite proxy in dev, FastAPI in production)
    v
 FastAPI (api.py)
-   |-- auth dependency (auth.py) ------------------> users table
+   |-- auth dependency (auth.py) ------------------> users/sessions
    |-- profile service (profile.py) ---------------> user_profiles
    |-- bookmark service (bookmarks.py) ------------> user_bookmarks
    |-- opportunity service (storage.py) -----------> opportunities
    |-- recommendation engine (scorer.py)
+   |-- rate limiter (rate_limit.py) ---------------> rate_limits
+   |-- discovery lock (locks.py) -------------------> discovery_locks
    |-- on-demand verification (verification.py) ---> external websites
    |
    v
-SQLite (database.py)
+database.py adapter
+   |-- SQLite (default)
+   +-- PostgreSQL (DATABASE_URL)
 ```
 
 Discovery is a separate pipeline, callable from the CLI or the API:
@@ -25,7 +29,7 @@ Discovery is a separate pipeline, callable from the CLI or the API:
 search.py (Tavily) -> ai.py (Gemini) -> validator.py -> dedup.py
                                           |              |
                                           v              v
-                                  link/date rules     SQLite upsert
+                                  link/date rules     database upsert
 ```
 
 ## Main request flows
@@ -33,50 +37,79 @@ search.py (Tavily) -> ai.py (Gemini) -> validator.py -> dedup.py
 ### Dashboard load
 
 1. React asks `GET /api/auth/status`.
-2. In demo mode, the API resolves every user-scoped request to the demo
-   account (id `1`).
+2. In demo mode, every user-scoped request resolves to the demo account
+   (id `1`).
 3. In auth mode, the browser sends `Authorization: Bearer <jwt>`.
-4. The API loads validated opportunities, the user's profile, the user's
+4. The JWT is verified, then its `jti` is checked against the
+   `sessions` table. Revoked or expired sessions return 401.
+5. The API loads validated opportunities, the user's profile, the user's
    bookmarks, and ranked recommendations.
-5. React combines them in memory for search, category filters, sorting,
+6. React combines them in memory for search, category filters, sorting,
    and the saved view.
+
+### Registration and verification
+
+1. `POST /api/auth/register` is rate-limited by IP.
+2. Passwords are validated and hashed with PBKDF2-SHA256.
+3. If `AUTH_REQUIRE_VERIFIED=1`, the account starts unverified.
+4. A single-use token is stored as a SHA-256 hash with a 24-hour expiry.
+5. The verification email links to `PUBLIC_APP_URL/?verify_token=...`.
+6. The frontend posts the token to `/api/auth/verify-email`; the API
+   marks the account verified and creates a revocable session.
+7. Without SMTP, `AUTH_DEV_SHOW_TOKENS=1` exposes the token only for
+   local development. It must remain disabled publicly.
+
+### Login, lockout, and logout
+
+- Five failed passwords lock the account for 15 minutes.
+- The password check is performed against a dummy hash for unknown
+  accounts to reduce timing differences.
+- Successful login resets failed-attempt counters and creates a session
+  row.
+- Logout marks the session revoked. Reusing the old JWT returns 401.
+- Password reset revokes **all** sessions for that user.
+
+### Password reset
+
+1. `POST /api/auth/forgot-password` always returns a generic response.
+2. If the account exists, a 30-minute single-use token is emailed.
+3. `POST /api/auth/reset-password` validates the new password, marks the
+   token used, updates the hash, clears lockout, and revokes sessions.
 
 ### Discovery
 
-1. `POST /api/discover` requires a user in auth mode.
-2. A process-local mutex rejects a concurrent run with HTTP 409.
-3. Tavily returns web results for one category.
-4. Each result is sent to Gemini with strict extraction rules.
-5. Gemini returns one JSON record plus evidence snippets.
-6. `validator.py` rejects records with bad URLs, unsupported types, low
+1. `POST /api/discover` requires a user and is rate-limited per user.
+2. `locks.acquire_lock("discovery")` inserts a row with an expiry. The
+   unique key makes the lock work across processes sharing the database.
+3. A stale lock expires after 20 minutes and can be taken over.
+4. Tavily returns web results for one category.
+5. Each result is sent to Gemini with strict extraction rules.
+6. Gemini returns one JSON record plus evidence snippets.
+7. `validator.py` rejects records with bad URLs, unsupported types, low
    confidence, malformed dates, past deadlines, or social-media-only
    application links.
-7. `dedup.py` removes duplicates by normalized URL or title + organization.
-8. `storage.py` replaces the opportunity collection in one transaction,
-   preserving `created_at` for rows whose source key did not change.
-
-> Note: the current repository `save_opportunities()` replaces the whole
-> collection. This is intentional for a single global discovery corpus
-> and is protected by a transaction. A row-level upsert API would be the
-> next step for multi-worker deployments.
+8. `dedup.py` removes duplicates by normalized URL or title +
+   organization.
+9. `storage.py` replaces the opportunity collection in one transaction,
+   preserving `created_at` for unchanged source keys.
+10. The lock is released in a `finally` block.
 
 ### Link verification
 
 1. The user presses **Check links now** in the detail drawer.
 2. `POST /api/opportunities/verify` accepts a **stored** source URL only.
-3. The backend rejects private, loopback, link-local, reserved, and
+3. The request is rate-limited per user.
+4. The backend rejects private, loopback, link-local, reserved, and
    multicast hosts after DNS resolution.
-4. It performs a streamed GET with a short timeout, reading only a small
-   prefix of the body.
-5. The response reports `reachable`, `blocked`, `timeout`, `unreachable`,
+5. Redirects are followed manually; every hop is re-checked.
+6. The response reports `reachable`, `blocked`, `timeout`, `unreachable`,
    or `invalid`, plus the HTTP status where available.
-6. The UI explicitly states that a reachable link does not prove the role
-   is open.
+7. The UI states that a reachable link does not prove the role is open.
 
-This design avoids an arbitrary-URL proxy (SSRF) while still giving the
-user useful evidence.
+This avoids an arbitrary-URL proxy (SSRF) while still giving the user
+useful evidence.
 
-## Database schema (version 2)
+## Database schema (version 3)
 
 ```sql
 opportunities(
@@ -85,7 +118,8 @@ opportunities(
 )
 
 users(
-  id, email UNIQUE, password_hash, display_name, created_at
+  id, email UNIQUE, password_hash, display_name,
+  email_verified, failed_login_attempts, locked_until, created_at
 )
 
 user_profiles(
@@ -98,11 +132,40 @@ user_bookmarks(
   url, created_at,
   PRIMARY KEY(user_id, url)
 )
+
+sessions(
+  jti PRIMARY KEY, user_id REFERENCES users(id),
+  created_at, expires_at, revoked_at
+)
+
+auth_tokens(
+  token_hash PRIMARY KEY, user_id REFERENCES users(id),
+  purpose, created_at, expires_at, used_at
+)
+
+rate_limits(limit_key PRIMARY KEY, window_start REAL, count)
+
+discovery_locks(name PRIMARY KEY, owner, acquired_at, expires_at)
 ```
 
 Legacy tables `profile` and `bookmarks` are read once during migration
-into the demo account and then left untouched as a rollback aid.
-`opportunities.json` is imported once when the database is empty.
+into the demo account. `opportunities.json` is imported once when the
+database is empty.
+
+## Portability layer
+
+`database.py` wraps SQLite and PostgreSQL behind the same small API:
+
+- `?` placeholders are translated to `%s` for psycopg.
+- Rows support `row["column"]` on both backends.
+- Transactions commit/rollback through the same context manager.
+- Integrity errors become a shared `DatabaseIntegrityError`.
+- SQLite pragmas are applied only to SQLite.
+- Schema DDL uses backend-specific serial columns.
+- `INSERT ... ON CONFLICT` is used instead of SQLite-only syntax.
+
+PostgreSQL integration tests run against a real server in CI and through
+`scripts/test_postgres.py` locally.
 
 ## Trust boundaries
 
@@ -112,30 +175,35 @@ into the demo account and then left untouched as a rollback aid.
 | Gemini output | Untrusted | Parsed defensively, validated, confidence threshold |
 | Stored URLs | Untrusted | SSRF guard; only stored values may be fetched |
 | User profile | Untrusted | Pydantic + dataclass validation, length limits |
-| JWT | Untrusted until verified | Signature + expiry checked, user re-loaded |
+| JWT | Untrusted until verified | Signature, expiry, and session row checked |
+| Password | Untrusted | Length limits, PBKDF2-SHA256, lockout |
+| Email tokens | Untrusted | SHA-256 hashed at rest, single-use, expiring |
 | Email HTML | Rendered text | `html.escape` for every dynamic value |
 | React UI | Escaped by default | No `dangerouslySetInnerHTML` |
 
 ## Authentication design
 
 - Passwords: PBKDF2-HMAC-SHA256, 260,000 iterations, 16-byte salt.
-- Tokens: HS256 JWT with `sub`, `email`, `iat`, `exp`; 7-day default.
-- No refresh tokens; signing out clears the client token. Tokens cannot
-  be revoked server-side yet, so a short lifetime is recommended for a
-  public deployment.
+- Tokens: HS256 JWT with `sub`, `email`, `jti`, `iat`, `exp`.
+- Sessions: server-side row per login; logout/password reset revokes.
+- Verification: 24-hour single-use token.
+- Reset: 30-minute single-use token; all sessions revoked.
+- Lockout: 5 failures → 15 minutes.
+- Rate limits: fixed-window counters in the database, keyed by IP or
+  user id. Works across processes sharing the database.
 - The demo user has an empty password hash and cannot sign in.
 - Auth is opt-in so the project remains easy to demo locally.
 
 ## Design trade-offs
 
-**SQLite over PostgreSQL.** Zero setup, transactional, and adequate for a
-single portfolio instance. The repository layer isolates SQL so a
-PostgreSQL adapter can replace it later.
+**SQLite default, PostgreSQL optional.** SQLite gives zero-setup local
+development. PostgreSQL is used when `DATABASE_URL` is set. The adapter
+keeps SQL portable without a heavy ORM.
 
 **JSON payload column.** Opportunity fields evolve quickly during AI
 experimentation. Storing the full record as JSON avoids a migration for
 every prompt change, while indexed columns (`source_key`, `type`) support
-lookups. A normalized table is a future optimization.
+lookups.
 
 **On-demand verification.** Checking every link on every dashboard load
 would be slow and could trigger rate limits. A manual action keeps the UI
@@ -150,7 +218,10 @@ corpus.
 - Tavily quota/network failure → discovery returns HTTP 502.
 - Gemini refusal or invalid JSON → result skipped, not stored.
 - Database locked → SQLite waits up to 5 seconds, then returns an error.
-- Expired JWT → API returns 401 and the UI returns to sign-in.
+- Expired or revoked JWT → API returns 401 and the UI returns to sign-in.
+- Unverified account → login returns 403 until verification completes.
+- Email delivery unavailable → registration returns a setup error unless
+  development tokens are enabled.
 - Verification blocked by a site → reported as `blocked`, not `dead`.
-- Multi-worker discovery → the in-process mutex does not coordinate
-  across processes. Use a queue or database lock before scaling out.
+- Multi-worker discovery → prevented by the database lock when workers
+  share one database; separate databases require a queue.

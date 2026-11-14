@@ -1,5 +1,4 @@
-﻿import threading
-from pathlib import Path
+﻿from pathlib import Path
 from profile import UserProfile, load_profile, save_profile
 
 from fastapi import Depends, FastAPI, HTTPException, Request
@@ -9,19 +8,38 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from auth import (
+    EmailNotVerifiedError,
     auth_configuration_warning,
     auth_mode_label,
     authenticate_user,
+    create_session,
     create_user,
     decode_token,
     get_user_by_id,
-    issue_token,
+    get_user_for_password_reset,
+    reset_password,
+    revoke_session,
+    session_is_active,
+    verify_email_token,
+)
+from auth_emails import (
+    send_password_reset_email,
+    send_verification_email,
 )
 from bookmarks import add_bookmark, load_bookmarks, remove_bookmark
-from config import ALLOWED_ORIGINS, AUTH_REQUIRED, SERVE_FRONTEND
-from database import DEMO_USER_EMAIL, DEMO_USER_ID
+from config import (
+    ALLOWED_ORIGINS,
+    AUTH_DEV_SHOW_TOKENS,
+    AUTH_REQUIRE_VERIFIED,
+    AUTH_REQUIRED,
+    SERVE_FRONTEND,
+)
+from database import DEMO_USER_EMAIL, DEMO_USER_ID, database_label
 from database import healthcheck as database_healthcheck
+from locks import acquire_lock, release_lock
+from mailer import email_configured
 from opportunity import ALLOWED_TYPES
+from rate_limit import enforce as enforce_rate_limit
 from run_agent import run_agent as execute_discovery
 from scorer import rank_opportunities
 from search import SEARCH_QUERIES
@@ -79,10 +97,24 @@ class LoginRequest(BaseModel):
     password: str = Field(min_length=1, max_length=128)
 
 
+class EmailRequest(BaseModel):
+    email: str = Field(min_length=3, max_length=254)
+
+
+class TokenRequest(BaseModel):
+    token: str = Field(min_length=10, max_length=500)
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str = Field(min_length=10, max_length=500)
+    password: str = Field(min_length=8, max_length=128)
+
+
 DEMO_USER = {
     "id": DEMO_USER_ID,
     "email": DEMO_USER_EMAIL,
     "name": "Demo Student",
+    "email_verified": True,
     "created_at": "",
     "demo": True,
 }
@@ -112,6 +144,15 @@ def current_user(request: Request) -> dict:
             headers={"WWW-Authenticate": "Bearer"},
         )
 
+    jti = claims.get("jti", "")
+
+    if not session_is_active(jti):
+        raise HTTPException(
+            status_code=401,
+            detail="Your session has been signed out or expired.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
     try:
         user = get_user_by_id(int(claims.get("sub", "0")))
     except (TypeError, ValueError, RuntimeError) as error:
@@ -126,13 +167,15 @@ def current_user(request: Request) -> dict:
             detail="Your session is invalid or has expired.",
         )
 
+    if AUTH_REQUIRE_VERIFIED and not user["email_verified"]:
+        raise HTTPException(
+            status_code=403,
+            detail="Email verification required.",
+        )
+
     user["demo"] = False
+    user["jti"] = jti
     return user
-
-
-# Only one discovery job may write at a time in this process. This avoids
-# two requests replacing the opportunity collection simultaneously.
-_discovery_lock = threading.Lock()
 
 
 app = FastAPI(
@@ -204,7 +247,9 @@ def health():
     return {
         "status": "ok" if database_ready else "degraded",
         "app": "Opportunity Agent",
-        "storage": "sqlite" if database_ready else "unavailable",
+        "storage": (
+            database_label() if database_ready else "unavailable"
+        ),
         "auth": auth_mode_label(),
         "auth_warning": auth_configuration_warning(),
     }
@@ -212,22 +257,45 @@ def health():
 
 @app.get("/api/auth/status")
 def auth_status():
-    """Let the frontend discover whether sign-in is required."""
+    """Let the frontend discover the authentication requirements."""
     return {
         "auth_required": AUTH_REQUIRED,
+        "verification_required": (
+            AUTH_REQUIRED and AUTH_REQUIRE_VERIFIED
+        ),
+        "email_configured": email_configured(),
+        "dev_tokens": AUTH_DEV_SHOW_TOKENS,
         "mode": auth_mode_label(),
         "warning": auth_configuration_warning(),
     }
 
 
 @app.post("/api/auth/register")
-def register(request: RegisterRequest):
-    """Create an account and return a bearer token."""
+def register(payload: RegisterRequest, http_request: Request):
+    """Create an account, verify email when required, or sign in."""
+    enforce_rate_limit(http_request, "register", 5, 3600)
+
+    require_verification = AUTH_REQUIRED and AUTH_REQUIRE_VERIFIED
+
+    if (
+        require_verification
+        and not email_configured()
+        and not AUTH_DEV_SHOW_TOKENS
+    ):
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                "Email delivery is not configured. Ask the operator "
+                "to set SENDER_EMAIL/SENDER_PASSWORD before sign-up."
+            ),
+        )
+
     try:
         user = create_user(
-            request.email,
-            request.password,
-            request.name,
+            payload.email,
+            payload.password,
+            payload.name,
+            email_verified=not require_verification,
         )
     except ValueError as error:
         status_code = (
@@ -245,20 +313,51 @@ def register(request: RegisterRequest):
             detail="The account could not be created.",
         ) from error
 
+    if require_verification:
+        sent, token = send_verification_email(user)
+        response = {
+            "status": "verification_sent",
+            "verification_required": True,
+            "email": user["email"],
+            "email_sent": sent,
+            "user": user,
+        }
+
+        if AUTH_DEV_SHOW_TOKENS:
+            response["dev_verification_token"] = token
+
+        if not sent and not AUTH_DEV_SHOW_TOKENS:
+            raise HTTPException(
+                status_code=502,
+                detail=(
+                    "Account created, but the verification email "
+                    "could not be sent. Try resending it later."
+                ),
+            )
+
+        return response
+
     return {
         "status": "registered",
-        "token": issue_token(user),
+        "token": create_session(user),
         "user": user,
     }
 
 
 @app.post("/api/auth/login")
-def login(request: LoginRequest):
-    """Exchange email and password for a bearer token."""
+def login(payload: LoginRequest, http_request: Request):
+    """Exchange email and password for a revocable session token."""
+    enforce_rate_limit(http_request, "login", 10, 300)
+
     try:
         user = authenticate_user(
-            request.email, request.password
+            payload.email, payload.password
         )
+    except EmailNotVerifiedError as error:
+        raise HTTPException(
+            status_code=403,
+            detail="Email verification required.",
+        ) from error
     except RuntimeError as error:
         raise HTTPException(
             status_code=500,
@@ -273,9 +372,131 @@ def login(request: LoginRequest):
 
     return {
         "status": "authenticated",
-        "token": issue_token(user),
+        "token": create_session(user),
         "user": user,
     }
+
+
+@app.post("/api/auth/verify-email")
+def verify_email(payload: TokenRequest, http_request: Request):
+    """Consume a verification token and start a session."""
+    enforce_rate_limit(http_request, "verify_email", 10, 3600)
+
+    user = verify_email_token(payload.token)
+
+    if user is None:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid or expired verification token.",
+        )
+
+    return {
+        "status": "verified",
+        "token": create_session(user),
+        "user": user,
+    }
+
+
+@app.post("/api/auth/resend-verification")
+def resend_verification(
+    payload: EmailRequest,
+    http_request: Request,
+):
+    """Resend a verification email without revealing account existence."""
+    enforce_rate_limit(
+        http_request, "resend_verification", 3, 3600
+    )
+
+    response = {
+        "status": "sent",
+        "email_sent": False,
+    }
+
+    user = get_user_for_password_reset(payload.email)
+
+    if user is not None and not user["email_verified"]:
+        sent, token = send_verification_email(user)
+        response["email_sent"] = sent
+
+        if AUTH_DEV_SHOW_TOKENS:
+            response["dev_verification_token"] = token
+
+    return response
+
+
+@app.post("/api/auth/forgot-password")
+def forgot_password(
+    payload: EmailRequest,
+    http_request: Request,
+):
+    """Send a reset link without revealing account existence."""
+    enforce_rate_limit(http_request, "forgot_password", 5, 3600)
+
+    response = {
+        "status": "sent",
+        "email_sent": False,
+    }
+
+    user = get_user_for_password_reset(payload.email)
+
+    if user is not None:
+        sent, token = send_password_reset_email(user)
+        response["email_sent"] = sent
+
+        if AUTH_DEV_SHOW_TOKENS:
+            response["dev_reset_token"] = token
+
+    return response
+
+
+@app.post("/api/auth/reset-password")
+def reset_password_endpoint(
+    payload: ResetPasswordRequest,
+    http_request: Request,
+):
+    """Consume a reset token, change the password, revoke sessions."""
+    enforce_rate_limit(
+        http_request, "reset_password", 5, 3600
+    )
+
+    try:
+        user = reset_password(payload.token, payload.password)
+    except ValueError as error:
+        raise HTTPException(
+            status_code=422,
+            detail=str(error),
+        ) from error
+    except RuntimeError as error:
+        raise HTTPException(
+            status_code=500,
+            detail="The password could not be reset.",
+        ) from error
+
+    if user is None:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid or expired reset token.",
+        )
+
+    return {
+        "status": "reset",
+        "email": user["email"],
+    }
+
+
+@app.post("/api/auth/logout")
+def logout(user: dict = Depends(current_user)):
+    """Revoke the current server-side session."""
+    if not user.get("demo") and user.get("jti"):
+        try:
+            revoke_session(user["jti"], user["id"])
+        except RuntimeError as error:
+            raise HTTPException(
+                status_code=500,
+                detail="The session could not be revoked.",
+            ) from error
+
+    return {"status": "logged_out"}
 
 
 @app.get("/api/auth/me")
@@ -387,9 +608,14 @@ def update_profile(
 @app.post("/api/discover")
 def discover(
     request: DiscoveryRequest,
+    http_request: Request,
     user: dict = Depends(current_user),
 ):
     """Run a limited discovery job from the website."""
+
+    enforce_rate_limit(
+        http_request, "discover", 5, 3600, user_id=user["id"]
+    )
 
     category = request.category.strip().lower()
 
@@ -399,7 +625,9 @@ def discover(
             detail="Unsupported opportunity category.",
         )
 
-    if not _discovery_lock.acquire(blocking=False):
+    owner = acquire_lock("discovery")
+
+    if owner is None:
         raise HTTPException(
             status_code=409,
             detail="A discovery run is already in progress. Try again shortly.",
@@ -413,7 +641,10 @@ def discover(
             detail="Discovery stopped unexpectedly. Check the backend logs.",
         ) from error
     finally:
-        _discovery_lock.release()
+        try:
+            release_lock("discovery", owner)
+        except RuntimeError:
+            pass
 
     if result != 0:
         raise HTTPException(
@@ -436,14 +667,21 @@ def discover(
 @app.post("/api/opportunities/verify")
 def verify_stored_opportunity(
     request: VerifyRequest,
+    http_request: Request,
     user: dict = Depends(current_user),
 ):
     """Check links for a stored opportunity, on demand.
+
+    Rate limiting also prevents repeated outbound requests.
 
     Only URLs already present in storage are fetched. Accepting
     arbitrary URLs here would create a server-side request forgery
     risk.
     """
+    enforce_rate_limit(
+        http_request, "verify_links", 30, 3600, user_id=user["id"]
+    )
+
     opportunity = find_opportunity(request.source_url)
 
     if opportunity is None:

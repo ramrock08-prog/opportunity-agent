@@ -1,5 +1,5 @@
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import "./App.css";
 import OpportunityCard from "./OpportunityCard";
 import OpportunityDetail from "./OpportunityDetail";
@@ -282,7 +282,13 @@ function App() {
     setReloadKey((value) => value + 1);
   }
 
-  function handleLogout() {
+  async function handleLogout() {
+    try {
+      await apiFetch("/api/auth/logout", { method: "POST" });
+    } catch {
+      // Clearing the local token still signs this browser out.
+    }
+
     clearAuthToken();
     setAuthUser(null);
     setOpportunities([]);
@@ -293,10 +299,10 @@ function App() {
     setActiveView("discover");
   }
 
-  function handleAuthenticated(user) {
+  const handleAuthenticated = useCallback((user) => {
     setAuthUser(user);
     setReloadKey((value) => value + 1);
-  }
+  }, []);
 
   // Filter opportunities and attach their recommendation scores
   const visibleOpportunities = useMemo(() => {
@@ -414,6 +420,7 @@ function App() {
     return (
       <AuthScreen
         warning={authStatus.warning}
+        status={authStatus}
         onAuthenticated={handleAuthenticated}
       />
     );

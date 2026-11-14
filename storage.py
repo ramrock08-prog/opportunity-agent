@@ -1,9 +1,9 @@
-﻿import json
-import sqlite3
+import json
 from pathlib import Path
 
 from database import (
     LEGACY_OPPORTUNITIES_FILE,
+    DatabaseError,
     get_connection,
     source_key,
     utc_now,
@@ -74,7 +74,7 @@ def load_opportunities() -> list[Opportunity]:
                 ORDER BY id ASC
                 """
             ).fetchall()
-    except sqlite3.Error as error:
+    except DatabaseError as error:
         raise RuntimeError(
             "Could not read opportunities from the database."
         ) from error
@@ -163,7 +163,7 @@ def save_opportunities(
                     ) in rows
                 ],
             )
-    except sqlite3.Error as error:
+    except DatabaseError as error:
         raise RuntimeError(
             "Could not save opportunities to the database."
         ) from error

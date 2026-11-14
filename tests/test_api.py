@@ -143,8 +143,10 @@ def test_discovery_rejects_unknown_category(isolated_db):
 
 
 def test_discovery_returns_conflict_while_locked(isolated_db):
-    acquired = api._discovery_lock.acquire(blocking=False)
-    assert acquired
+    from locks import acquire_lock, release_lock
+
+    owner = acquire_lock("discovery")
+    assert owner
 
     try:
         response = client.post(
@@ -152,6 +154,6 @@ def test_discovery_returns_conflict_while_locked(isolated_db):
             json={"category": "internship", "limit": 1},
         )
     finally:
-        api._discovery_lock.release()
+        release_lock("discovery", owner)
 
     assert response.status_code == 409

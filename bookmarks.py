@@ -1,9 +1,9 @@
-﻿import sqlite3
 from urllib.parse import urlparse
 
 from database import (
     DEMO_USER_ID,
     LEGACY_BOOKMARKS_FILE,
+    DatabaseError,
     get_connection,
     utc_now,
 )
@@ -39,7 +39,7 @@ def load_bookmarks(user_id: int = DEMO_USER_ID) -> list[str]:
                 """,
                 (user_id,),
             ).fetchall()
-    except sqlite3.Error as error:
+    except DatabaseError as error:
         raise RuntimeError("Could not load bookmarks.") from error
 
     urls = []
@@ -66,13 +66,14 @@ def add_bookmark(
         with get_connection() as connection:
             connection.execute(
                 """
-                INSERT OR IGNORE INTO user_bookmarks(
+                INSERT INTO user_bookmarks(
                     user_id, url, created_at
                 ) VALUES(?, ?, ?)
+                ON CONFLICT(user_id, url) DO NOTHING
                 """,
                 (user_id, url.strip(), utc_now()),
             )
-    except sqlite3.Error as error:
+    except DatabaseError as error:
         raise RuntimeError("Could not save the bookmark.") from error
 
     return load_bookmarks(user_id)
@@ -91,7 +92,7 @@ def remove_bookmark(
                 """,
                 (user_id, url.strip()),
             )
-    except sqlite3.Error as error:
+    except DatabaseError as error:
         raise RuntimeError("Could not remove the bookmark.") from error
 
     return load_bookmarks(user_id)

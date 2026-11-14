@@ -1,11 +1,11 @@
-﻿import json
-import sqlite3
+import json
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
 from database import (
     DEMO_USER_ID,
     LEGACY_PROFILE_FILE,
+    DatabaseError,
     get_connection,
     utc_now,
 )
@@ -132,7 +132,7 @@ def load_profile(
                 """,
                 (user_id,),
             ).fetchone()
-    except sqlite3.Error as error:
+    except DatabaseError as error:
         raise RuntimeError("Could not read the profile.") from error
 
     if row is None:
@@ -184,7 +184,7 @@ def save_profile(
                     utc_now(),
                 ),
             )
-    except sqlite3.Error as error:
+    except DatabaseError as error:
         raise RuntimeError("Could not save the profile.") from error
 
 

@@ -7,7 +7,7 @@ software engineering or AI/ML placement interview.
 
 > Opportunity Agent is a full-stack AI platform that discovers student
 > opportunities from the web, extracts structured records with Gemini,
-> validates them, stores them in SQLite, and ranks them against a
+> validates them, stores them in SQLite or PostgreSQL, and ranks them against a
 > personal profile. The hard part is not calling an LLM — it is refusing
 > to trust it. I added evidence snippets, deadline-evidence rules, an
 > honest link checker, deduplication, and per-user data isolation.
@@ -23,7 +23,7 @@ software engineering or AI/ML placement interview.
 5. **Profile** — change a skill or interest, save, and show the
    recommendation score/reasons changing.
 6. **API docs** — open `/docs`, mention validation and auth dependencies.
-7. **Tests** — run `pytest`, mention 55 tests and the Playwright flows.
+7. **Tests** — run `pytest`, mention 73 tests and the Playwright flows.
 8. **Architecture** — open `docs/ARCHITECTURE.md`; discuss trust
    boundaries and SQLite trade-offs.
 
@@ -54,17 +54,28 @@ interviewer asks; it spends Tavily/Gemini credits and takes time.
 - Scores are normalized 0–100 and explicitly not eligibility decisions.
 
 ### 4. Persistence and migration
-- SQLite with WAL, transactions, and unique keys.
+- SQLite by default; PostgreSQL through `DATABASE_URL`.
+- A thin adapter translates placeholders, rows, transactions, and
+  integrity errors for both backends.
 - The legacy JSON files are imported once, so the original project's
   data was not discarded.
+- Schema version 3 adds sessions, auth tokens, rate limits, and a
+  cross-process discovery lock.
 - Per-user tables avoid the common portfolio mistake of one global
   profile/bookmark list.
 
 ### 5. Authentication without over-engineering
 - Optional JWT mode keeps local demos frictionless.
-- PBKDF2-SHA256 with random salt avoids a heavyweight dependency.
-- Every user-scoped query includes `user_id`.
-- Tests prove Alice cannot read Bob's bookmarks or profile.
+- Passwords use PBKDF2-SHA256 with random salts.
+- Sessions are server-side rows, so logout and password reset revoke
+  tokens immediately.
+- Email verification and reset tokens are hashed, single-use, and
+  expiring.
+- Five failed logins trigger a 15-minute lockout.
+- Database-backed rate limits protect registration, login, reset,
+  discovery, and link checks.
+- Every user-scoped query includes `user_id`; tests prove Alice cannot
+  read Bob's bookmarks or profile.
 
 ## Likely questions and answers
 
@@ -88,20 +99,21 @@ Page content is labeled untrusted in the prompt, the model is told not
 to follow embedded instructions, and output is parsed as data — never
 executed. The model also cannot run tools in this pipeline.
 
-**Why SQLite?**
-It gives real transactions and migrations with zero infrastructure. The
-repository layer isolates SQL, and the schema is ready to move to
-PostgreSQL when there are multiple writers. The current discovery mutex
-is per process, which is an honest limitation.
+**Why SQLite, and why PostgreSQL too?**
+SQLite gives real transactions and migrations with zero infrastructure.
+PostgreSQL is available through `DATABASE_URL` when concurrency grows.
+The same adapter and integration tests cover both; the discovery lock is
+in the database, so it works across processes, not just threads.
 
 **How is user data isolated?**
 JWTs identify the user; every profile/bookmark query uses the authenticated
 user id. API tests create two users and assert cross-account reads fail.
 
 **What would you do before real production?**
-Rate limiting, email verification, password reset, refresh-token
-revocation, PostgreSQL, a distributed discovery lock/queue, observability,
-and provider-cost limits.
+Rate limiting, verification, reset, lockout, revocation, PostgreSQL, and
+a cross-process lock are implemented. Remaining work: MFA, an admin
+console, observability/alerting, email deliverability monitoring, a
+managed queue for discovery at larger scale, and stronger cost controls.
 
 **What was the hardest bug?**
 A Gemini result pointing at an Instagram post with an invented deadline.
@@ -133,11 +145,13 @@ contains. The product communicates this uncertainty instead of hiding it.
 
 ## Metrics to quote accurately
 
-- 55 automated backend/API tests.
-- 2 Playwright browser flows (bookmarks/detail, auth/profile).
+- 73 automated tests: 69 SQLite + 4 PostgreSQL integration tests.
+- 2 Playwright browser flows (bookmarks/detail, verification/reset/profile).
 - 7 opportunity categories.
 - 6 scoring components with transparent reasons.
-- 2 storage layers during migration: legacy JSON → SQLite (version 2 schema).
+- Storage migration: legacy JSON → SQLite/PostgreSQL (schema version 3).
+- Security controls: PBKDF2, revocable sessions, verification, reset,
+  lockout, rate limits, SSRF guard.
 
 Avoid quoting user numbers or deployment traffic; the project has not
 been publicly deployed yet.

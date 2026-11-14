@@ -41,6 +41,29 @@ AUTH_TOKEN_MINUTES = int(
     os.getenv("AUTH_TOKEN_MINUTES", "10080")
 )
 
+# Require a verified email before user-scoped API access. Local demos
+# can disable this, and AUTH_DEV_SHOW_TOKENS exposes verification links
+# in API responses during development only.
+AUTH_REQUIRE_VERIFIED = os.getenv(
+    "AUTH_REQUIRE_VERIFIED", "1"
+).strip().lower() in {"1", "true", "yes", "on"}
+
+AUTH_DEV_SHOW_TOKENS = os.getenv(
+    "AUTH_DEV_SHOW_TOKENS", "0"
+).strip().lower() in {"1", "true", "yes", "on"}
+
+PUBLIC_APP_URL = os.getenv(
+    "PUBLIC_APP_URL", "http://localhost:5173"
+).strip().rstrip("/")
+
+RATE_LIMIT_ENABLED = os.getenv(
+    "RATE_LIMIT_ENABLED", "1"
+).strip().lower() in {"1", "true", "yes", "on"}
+
+TRUST_PROXY = os.getenv(
+    "TRUST_PROXY", "0"
+).strip().lower() in {"1", "true", "yes", "on"}
+
 # When enabled, FastAPI serves frontend/dist at the site root. Docker
 # images set this to 1 after building the React app.
 SERVE_FRONTEND = os.getenv("SERVE_FRONTEND", "0").strip().lower() in {

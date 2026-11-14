@@ -4,8 +4,9 @@
 
 Opportunity Agent searches the web for internships, hackathons, jobs,
 scholarships, fellowships, competitions, and research programs; extracts
-structured records with Gemini; validates them; stores them in SQLite;
-and ranks them against a student profile in a React dashboard.
+structured records with Gemini; validates them; stores them in SQLite
+or PostgreSQL; and ranks them against a student profile in a React
+dashboard.
 
 This project grew out of the original
 [`hackathon-agent`](https://github.com/ramrock08-prog/hackathon-agent)
@@ -55,17 +56,26 @@ email digest, and GitHub Actions ideas are preserved and generalized.
 ### Accounts and security
 - Optional JWT authentication (`AUTH_REQUIRED=1`).
 - PBKDF2-SHA256 password hashing with per-password salt.
+- Email verification with single-use, expiring tokens.
+- Password reset with session revocation.
+- Account lockout after repeated failed sign-ins.
+- Revocable server-side sessions (logout works immediately).
+- Database-backed rate limits on registration, login, reset,
+  verification, discovery, and link checks.
 - Strict per-user profiles, bookmarks, and recommendations.
 - Demo workspace when authentication is disabled.
 - Secrets stay server-side; the frontend never receives API keys.
 
 ### Operations
-- SQLite persistence with automatic legacy JSON import.
-- Transactional writes and a discovery mutex.
+- SQLite for a single instance or PostgreSQL via `DATABASE_URL`.
+- Automatic legacy JSON import and schema migrations.
+- Transactional writes and a **cross-process** database discovery lock.
 - HTML email digest (`notify.py --preview` / `--send`).
+- Verification and reset emails through Gmail SMTP.
 - GitHub Actions scheduled discovery with JSON snapshot persistence.
 - Docker multi-stage build; Render blueprint included.
-- 55 automated backend/API tests plus two Playwright browser flows.
+- 69 SQLite tests + 4 PostgreSQL integration tests, plus two Playwright
+  browser flows.
 
 ---
 
@@ -88,8 +98,8 @@ email digest, and GitHub Actions ideas are preserved and generalized.
        +--> save / search / filter / detail drawer / profile editor
 ```
 
-**Backend stack:** Python 3.10+, FastAPI, Pydantic, SQLite, google-genai,
-Tavily, PyJWT, requests.
+**Backend stack:** Python 3.10+, FastAPI, Pydantic, SQLite/PostgreSQL,
+psycopg, google-genai, Tavily, PyJWT, requests.
 
 **Frontend stack:** React 19, Vite 8, JavaScript, CSS, ESLint.
 
@@ -163,12 +173,18 @@ $env:SERVE_FRONTEND = "1"
 | `GEMINI_MODEL` | Gemini model ID | `gemini-3.5-flash-lite` |
 | `TAVILY_API_KEY` | Web search | required for discovery |
 | `OPPORTUNITY_DB_PATH` | SQLite file | `data/opportunity_agent.db` |
+| `DATABASE_URL` | PostgreSQL URL; overrides SQLite | empty |
 | `CORS_ORIGINS` | Comma-separated allowed origins | localhost:5173 |
 | `SERVE_FRONTEND` | Serve React build from FastAPI | `0` |
+| `PUBLIC_APP_URL` | Base URL used in account emails | `http://localhost:5173` |
 | `AUTH_REQUIRED` | Require sign-in for user data | `0` |
+| `AUTH_REQUIRE_VERIFIED` | Require verified email | `1` |
+| `AUTH_DEV_SHOW_TOKENS` | Expose dev verification/reset tokens | `0` |
 | `AUTH_SECRET` | JWT signing secret | dev fallback |
-| `AUTH_TOKEN_MINUTES` | Token lifetime | `10080` (7 days) |
-| `SENDER_EMAIL` | Digest sender | optional |
+| `AUTH_TOKEN_MINUTES` | Session lifetime | `10080` (7 days) |
+| `RATE_LIMIT_ENABLED` | Database-backed abuse protection | `1` |
+| `TRUST_PROXY` | Trust `X-Forwarded-For` behind a proxy | `0` |
+| `SENDER_EMAIL` | Account/digest sender | optional |
 | `SENDER_PASSWORD` | Gmail app password | optional |
 | `RECEIVER_EMAIL` | Digest recipient | optional |
 
@@ -180,6 +196,22 @@ Generate a production secret:
 
 The configured Gemini model was verified against the API key with
 `client.models.list()`; no generation credits were used.
+
+### Testing verified accounts without SMTP
+
+For local authentication testing, use a development token flow:
+
+```powershell
+$env:AUTH_REQUIRED = "1"
+$env:AUTH_REQUIRE_VERIFIED = "1"
+$env:AUTH_DEV_SHOW_TOKENS = "1"
+$env:AUTH_SECRET = "local-development-secret"
+.\.venv\Scripts\python.exe -m uvicorn api:app --reload
+```
+
+With SMTP unset, the registration screen shows a **Verify now
+(development)** button. Never enable `AUTH_DEV_SHOW_TOKENS` on a public
+deployment; configure Gmail SMTP instead.
 
 ---
 
@@ -214,12 +246,17 @@ malformed rows do not silently accumulate.
 | GET | `/` | – | API info or production React app |
 | GET | `/api` | – | API info |
 | GET | `/api/health` | – | Status, storage, auth mode |
-| GET | `/api/auth/status` | – | Whether sign-in is required |
-| POST | `/api/auth/register` | – | Create account, return JWT |
-| POST | `/api/auth/login` | – | Exchange credentials for JWT |
+| GET | `/api/auth/status` | - | Sign-in/verification requirements |
+| POST | `/api/auth/register` | - | Create account or start verification |
+| POST | `/api/auth/login` | - | Exchange credentials for a session |
+| POST | `/api/auth/verify-email` | - | Consume verification token |
+| POST | `/api/auth/resend-verification` | - | Resend verification email |
+| POST | `/api/auth/forgot-password` | - | Send a reset link |
+| POST | `/api/auth/reset-password` | - | Set a new password |
+| POST | `/api/auth/logout` | Bearer | Revoke current session |
 | GET | `/api/auth/me` | Bearer | Current user |
-| GET | `/api/opportunities` | – | Validated opportunities |
-| POST | `/api/opportunities/verify` | – | Check stored links on demand |
+| GET | `/api/opportunities` | - | Validated opportunities |
+| POST | `/api/opportunities/verify` | User | Check stored links on demand |
 | GET | `/api/recommendations` | User | Ranked for current profile |
 | GET | `/api/profile` | User | Current profile |
 | PUT | `/api/profile` | User | Update current profile |
@@ -241,7 +278,15 @@ when authentication is enabled.
 .\.venv\Scripts\python.exe -m pytest
 ```
 
-Current result: **55 passed** (API tests use disposable temp databases).
+Current result: **69 passed, 3 skipped** with SQLite (PostgreSQL tests
+are skipped unless a database is configured). With the local PostgreSQL
+server enabled: **73 passed**.
+
+```powershell
+# Starts a temporary PostgreSQL server with pgserver and runs the 3
+# PostgreSQL integration tests against it.
+.\.venv\Scripts\python.exe .\scripts\test_postgres.py
+```
 
 ### Browser tests
 
@@ -255,10 +300,12 @@ details drawer → mocked link check. Requires:
 .\.venv\Scripts\python.exe .\scripts\e2e_bookmarks.py
 ```
 
-`scripts/e2e_auth.py` verifies registration → profile save → logout →
-login → restored profile. It requires an auth-enabled backend on port
-`8001` and a Vite server on port `5174` with
-`VITE_API_BASE=http://127.0.0.1:8001`. See the script docstring.
+`scripts/e2e_auth.py` verifies registration → required email
+verification → profile save → logout → password reset → login →
+restored profile. It requires an auth-enabled backend on port `8001`
+with `AUTH_REQUIRE_VERIFIED=1` and `AUTH_DEV_SHOW_TOKENS=1`, plus a Vite
+server on port `5174` with `VITE_API_BASE=http://127.0.0.1:8001`. See
+the script docstring.
 
 Credit-consuming integration probes are deliberately isolated in
 `scripts/manual/` so `pytest` never spends Tavily or Gemini credits.
@@ -315,7 +362,7 @@ opportunity-agent/
 ├── run_agent.py            Discovery pipeline CLI
 ├── notify.py               HTML email digest
 ├── agent.py                Legacy original drone scout (kept for history)
-├── tests/                  Pytest suite (55 tests)
+├── tests/                  69 SQLite tests + 4 PostgreSQL tests
 ├── scripts/
 │   ├── e2e_bookmarks.py    Playwright bookmark/details flow
 │   ├── e2e_auth.py         Playwright auth flow
@@ -367,23 +414,32 @@ not an eligibility decision.
 ## Security notes
 
 Implemented:
-- `.env`, local profile, bookmarks, and the SQLite database are gitignored.
+- `.env`, local profile, bookmarks, and database files are gitignored.
 - Password hashing uses PBKDF2-SHA256 with random salts.
-- JWTs are signed and expire.
+- JWT sessions are signed, expiring, and revocable server-side.
+- Email verification and password reset use single-use, expiring,
+  hashed tokens.
+- Failed sign-ins trigger a 15-minute account lockout.
+- Database-backed rate limits cover registration, login, verification,
+  password reset, discovery, and link checks.
 - Per-user queries prevent cross-account profile/bookmark access.
-- API keys never reach the browser.
+- API keys never reach the browser; auth tokens are sent as headers.
 - CORS uses an explicit allow-list.
-- Link verification rejects private/loopback hosts to reduce SSRF risk.
+- Link verification rejects private/loopback hosts and re-checks every
+  redirect to reduce SSRF risk.
 - Frontend HTML escapes untrusted opportunity text via React; email HTML
   is explicitly escaped.
+- PostgreSQL is supported through the same tested repository layer.
 
-Not yet production-hardened:
-- No rate limiting on discovery or authentication.
-- No email verification, password reset, or account lockout.
-- No refresh-token rotation or server-side token revocation.
-- SQLite is suitable for a single instance, not horizontal scaling.
-- The discovery mutex is per process; multi-worker deployments need a
-  database/queue lock.
+Remaining limitations:
+- No MFA/WebAuthn and no admin console.
+- Fixed-window rate limiting is database-backed but not a distributed
+  Redis limiter; it is adequate for this project's scale.
+- Gmail SMTP deliverability depends on the account's app-password setup.
+- No account email-change flow or data-export/delete workflow.
+- SQLite still serializes writes; use PostgreSQL for higher concurrency.
+- Docker has not been built on this Windows machine (Docker absent).
+- A public deployment still requires your Render account and secrets.
 
 These are documented intentionally rather than hidden.
 
@@ -393,13 +449,14 @@ These are documented intentionally rather than hidden.
 
 - **Phase A — Core frontend:** complete (details, saved count, filters,
   sorting, profile, search, states).
-- **Phase B — Backend architecture:** complete for SQLite; JSON storage
-  replaced with automatic migration. PostgreSQL is a future option.
+- **Phase B - Backend architecture:** SQLite and PostgreSQL supported;
+  JSON storage replaced with automatic migrations.
 - **Phase C — AI quality:** evidence snippets, deadline-evidence rules,
   on-demand link verification, deduplication, confidence scoring.
 - **Phase D — Original functionality:** email digest and scheduled GitHub
   Actions restored on the generalized pipeline.
-- **Phase E — Accounts:** optional JWT auth with per-user isolation.
+- **Phase E - Accounts:** JWT auth, verification, reset, lockout,
+  revocable sessions, rate limits, and per-user isolation.
 - **Phase F — Deployment:** Docker, Render blueprint, documentation;
   an actual public deployment still needs your hosting account and keys.
 - **Phase G — Interview readiness:** see

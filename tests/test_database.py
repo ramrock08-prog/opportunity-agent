@@ -109,9 +109,7 @@ def test_legacy_bookmarks_are_not_reimported_after_removal(
         )
 
     # Force the schema hook to run again, as it would on a restart.
-    database._initialized_paths.discard(
-        str(isolated_db.resolve())
-    )
+    database._initialized_targets.clear()
 
     assert load_bookmarks() == []
 

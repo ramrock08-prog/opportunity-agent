@@ -11,10 +11,20 @@ services:
         value: "1"
       - key: AUTH_REQUIRED
         value: "1"
+      - key: AUTH_REQUIRE_VERIFIED
+        value: "1"
+      - key: AUTH_DEV_SHOW_TOKENS
+        value: "0"
       - key: AUTH_SECRET
         generateValue: true
       - key: CORS_ORIGINS
         value: https://opportunity-agent.onrender.com
+      - key: PUBLIC_APP_URL
+        value: https://opportunity-agent.onrender.com
+      - key: RATE_LIMIT_ENABLED
+        value: "1"
+      - key: TRUST_PROXY
+        value: "1"
       - key: OPPORTUNITY_DB_PATH
         value: /app/data/opportunity_agent.db
       - key: GEMINI_API_KEY

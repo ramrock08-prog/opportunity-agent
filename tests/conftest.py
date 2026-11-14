@@ -17,11 +17,17 @@ def isolated_db(tmp_path, monkeypatch):
         "OPPORTUNITY_DB_PATH", str(database_file)
     )
     monkeypatch.setenv("OPPORTUNITY_SKIP_IMPORT", "1")
+    monkeypatch.delenv("DATABASE_URL", raising=False)
 
+    import api
+    import auth
     import database
+    import rate_limit
 
-    database._initialized_paths.discard(
-        str(database_file.resolve())
-    )
+    database._initialized_targets.clear()
+    monkeypatch.setattr(rate_limit, "RATE_LIMIT_ENABLED", False)
+    monkeypatch.setattr(auth, "AUTH_REQUIRE_VERIFIED", False)
+    monkeypatch.setattr(api, "AUTH_REQUIRE_VERIFIED", False)
+    monkeypatch.setattr(api, "AUTH_DEV_SHOW_TOKENS", False)
 
     yield database_file

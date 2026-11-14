@@ -1,29 +1,35 @@
 # Deployment guide
 
 The repository is deployment-ready, but **no public deployment has been
-performed yet**. You need your own hosting account, API keys, and domain.
+performed yet**. You need your own hosting account, API keys, SMTP
+credentials, and (optionally) a PostgreSQL database.
 
 ## Production checklist
 
 - [ ] Set `APP_ENV=production`.
 - [ ] Set `AUTH_REQUIRED=1`.
-- [ ] Set a long random `AUTH_SECRET` (not the development fallback).
+- [ ] Set `AUTH_REQUIRE_VERIFIED=1`.
+- [ ] Keep `AUTH_DEV_SHOW_TOKENS=0`.
+- [ ] Set a long random `AUTH_SECRET`.
+- [ ] Set `PUBLIC_APP_URL` to the public URL used in emails.
 - [ ] Set `CORS_ORIGINS` to the exact public frontend origin.
 - [ ] Set `SERVE_FRONTEND=1` for the single-container build.
+- [ ] Configure `SENDER_EMAIL`, `SENDER_PASSWORD` (Gmail app password),
+      and `RECEIVER_EMAIL` if you want verification/reset/digest email.
 - [ ] Add `GEMINI_API_KEY` and `TAVILY_API_KEY` as host secrets.
-- [ ] Mount persistent storage at `/app/data`.
+- [ ] Choose storage: `OPPORTUNITY_DB_PATH` on a persistent disk, or
+      `DATABASE_URL` pointing at PostgreSQL.
 - [ ] Use HTTPS (the hosting platform normally terminates TLS).
 - [ ] Run `GET /api/health` and confirm `"status": "ok"`.
-- [ ] Register a real account and verify profile/bookmark isolation.
-- [ ] Add rate limiting before exposing discovery publicly.
+- [ ] Register a real account, verify the email, and confirm
+      profile/bookmark isolation with a second account.
 - [ ] Do not commit `.env`, `profile.json`, `bookmarks.json`, or `*.db`.
 
-## Option 1: Docker (single service)
+## Option 1: Docker + SQLite (single service, persistent disk)
 
 ```powershell
 cd F:\opportunity-agent
 
-# Build the React app and Python runtime into one image
 docker build -t opportunity-agent .
 
 docker run --rm -p 8000:8000 `
@@ -31,6 +37,9 @@ docker run --rm -p 8000:8000 `
   -e APP_ENV=production `
   -e SERVE_FRONTEND=1 `
   -e AUTH_REQUIRED=1 `
+  -e AUTH_REQUIRE_VERIFIED=1 `
+  -e AUTH_DEV_SHOW_TOKENS=0 `
+  -e PUBLIC_APP_URL=http://localhost:8000 `
   -v opportunity_data:/app/data `
   opportunity-agent
 ```
@@ -38,51 +47,79 @@ docker run --rm -p 8000:8000 `
 Open <http://localhost:8000>. FastAPI serves the React build and the API
 from the same origin.
 
-`docker compose up --build` reads `.env` and uses the named volume
-declared in `docker-compose.yml`.
+> Docker was not installed on the development machine, so the image was
+> not built locally. The same production path was verified by building
+> `frontend/dist` and serving it from FastAPI with `SERVE_FRONTEND=1`.
 
-### Building for a separate frontend host
+## Option 2: Docker + PostgreSQL
 
-If the UI is hosted separately, build it with an explicit API origin:
+`docker-compose.postgres.yml` starts PostgreSQL 16 and the app:
 
 ```powershell
-cd frontend
-$env:VITE_API_BASE = "https://your-api.example.com"
-& F:\Tools\nodejs\npm.cmd run build
+$env:POSTGRES_PASSWORD = "choose-a-strong-password"
+docker compose -f docker-compose.postgres.yml up --build
 ```
 
-Then set the backend's `CORS_ORIGINS` to the frontend origin. Do not put
-API keys in `VITE_*` variables; Vite exposes them to the browser.
+Or point any deployment at a managed PostgreSQL server:
 
-## Option 2: Render
+```text
+DATABASE_URL=postgresql://user:password@host:5432/database
+```
+
+The app creates its schema automatically and runs the one-time JSON
+import if the database is empty. `DATABASE_URL` takes precedence over
+`OPPORTUNITY_DB_PATH`.
+
+## Option 3: Render
 
 `render.yaml` defines a Docker web service with:
 
 - health check `/api/health`
 - generated `AUTH_SECRET`
+- required email verification
+- rate limiting enabled and `TRUST_PROXY=1`
 - secret prompts for Gemini, Tavily, and email credentials
-- a 1 GB disk mounted at `/app/data`
+- a 1 GB disk mounted at `/app/data` (SQLite mode)
 
-Update `CORS_ORIGINS` to your actual Render URL before deploying. The
-blueprint uses the `starter` plan because persistent disks are not
-available on every free tier. SQLite durability depends on that disk.
+Before applying it:
+
+1. Update `CORS_ORIGINS` and `PUBLIC_APP_URL` to the real Render URL.
+2. Add `SENDER_EMAIL`, `SENDER_PASSWORD`, and `RECEIVER_EMAIL` so users
+   can receive verification and reset emails.
+3. Optionally add a Render PostgreSQL instance and set `DATABASE_URL`
+   instead of using the disk.
 
 ```text
 New Render Blueprint -> select this repository -> apply render.yaml
 ```
 
-## Option 3: Railway / Fly.io / a VPS
+The blueprint uses the `starter` plan because persistent disks are not
+available on every free tier. SQLite durability depends on that disk.
 
-Use the Dockerfile directly. Requirements:
+## Email configuration
 
-1. Persistent volume mounted at `/app/data`.
-2. `$PORT` support — override the container command if the platform
-   injects a port, for example:
-   `uvicorn api:app --host 0.0.0.0 --port $PORT`
-3. Environment variables from the checklist.
-4. HTTPS at the edge.
+User accounts require email delivery when verification is enforced.
+
+- `SENDER_EMAIL`: Gmail address.
+- `SENDER_PASSWORD`: Gmail **app password**, not the account password.
+- `RECEIVER_EMAIL`: digest recipient (verification/reset emails go to the
+  user's own address).
+- `PUBLIC_APP_URL`: public site URL used to build email links.
+
+For local development without SMTP, set:
+
+```text
+AUTH_REQUIRED=1
+AUTH_REQUIRE_VERIFIED=1
+AUTH_DEV_SHOW_TOKENS=1
+```
+
+The UI then exposes a **Verify now (development)** action. Never enable
+this in production.
 
 ## Database and backups
+
+### SQLite
 
 SQLite lives at `OPPORTUNITY_DB_PATH` (default
 `data/opportunity_agent.db`). Back up the file, or export a portable
@@ -93,8 +130,16 @@ snapshot:
 ```
 
 The GitHub Actions workflow restores `opportunities.json` into a fresh
-database, runs discovery, and commits the updated snapshot. This keeps a
-versioned opportunity memory even if the hosted SQLite volume is lost.
+database, runs discovery, and commits the updated snapshot.
+
+### PostgreSQL
+
+Use the provider's automated backups. Schema creation is automatic. The
+integration test suite can be run against a real server with:
+
+```powershell
+.\.venv\Scripts\python.exe .\scripts\test_postgres.py
+```
 
 Do **not** commit user bookmarks or profiles. The snapshot contains only
 the shared opportunity corpus.
@@ -105,7 +150,7 @@ the shared opportunity corpus.
 Invoke-RestMethod https://your-domain/api/health
 ```
 
-Expected:
+Expected (SQLite example):
 
 ```json
 {
@@ -120,29 +165,29 @@ Expected:
 Then in the browser:
 
 1. Create an account.
-2. Save an opportunity, refresh, confirm it remains saved.
-3. Sign out and create a second account; confirm the first account's
-   bookmarks and profile are not visible.
-4. Open a detail drawer and run **Check links now**.
-5. Confirm the application page is truthful about uncertainty.
+2. Verify the email from the delivered message.
+3. Save an opportunity, refresh, and confirm it remains saved.
+4. Sign out; confirm the old token is rejected.
+5. Request a password reset; confirm the link works and old sessions are
+   invalidated.
+6. Create a second account; confirm it cannot see the first account's
+   profile or bookmarks.
+7. Open a detail drawer and run **Check links now**.
+8. Confirm the application page is truthful about uncertainty.
 
 ## Cost and abuse controls
 
-Discovery calls Tavily and Gemini. Before making `/api/discover` public:
+Discovery calls Tavily and Gemini. Rate limits are enabled by default,
+but you should still monitor provider quotas. The API caps discovery at
+3 Gemini extractions per call and 5 discovery runs per user per hour.
 
-- add per-user/IP rate limiting,
-- lower `limit` for normal users,
-- consider a queue or admin-only discovery trigger,
-- cache search results,
-- monitor provider quotas.
-
-The current request limit is capped at 3 Gemini extractions per call in
-`api.py`.
+Consider lowering these limits or making discovery admin-only for a
+public portfolio deployment.
 
 ## Rollback
 
 - Redeploy the previous image.
-- The SQLite schema is additive; keep a copy of the database before
-  changing schema versions.
+- Keep a copy of the database before changing schema versions.
 - Legacy JSON tables and the original `opportunities.json` remain
   available for recovery.
+- `schema_meta.schema_version` records the applied schema version.

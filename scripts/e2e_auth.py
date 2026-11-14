@@ -1,7 +1,14 @@
-"""Browser test for registration, login, profile persistence, and logout.
+"""Browser test for verification, reset, profile persistence, and logout.
 
-Requires an auth-enabled backend on port 8001 and a Vite server on
-port 5174 with VITE_API_BASE=http://127.0.0.1:8001.
+Requires an auth-enabled backend on port 8001 with:
+    AUTH_REQUIRED=1
+    AUTH_REQUIRE_VERIFIED=1
+    AUTH_DEV_SHOW_TOKENS=1
+    AUTH_SECRET=<local test secret>
+    SENDER_EMAIL/SENDER_PASSWORD unset (dev token mode)
+
+and a Vite server on port 5174 with
+VITE_API_BASE=http://127.0.0.1:8001.
 """
 
 import time
@@ -48,10 +55,17 @@ def main() -> int:
         page.get_by_label("Password").fill(password)
         page.locator(".auth-submit").click()
 
+        expect(
+            page.get_by_role("heading", name="Verify your email")
+        ).to_be_visible(timeout=15_000)
+        page.get_by_role(
+            "button", name="Verify now (development)"
+        ).click()
+
         account = page.locator(".account-box", has_text=email)
         expect(account).to_be_visible(timeout=15_000)
         expect(page.get_by_role("heading", name="Explore opportunities")).to_be_visible()
-        print("Registration signs the user into the dashboard.")
+        print("Registration and email verification sign the user in.")
 
         page.get_by_role("button", name="Edit profile").click()
         page.get_by_label("Degree").fill("B.Tech")
@@ -66,19 +80,43 @@ def main() -> int:
         expect(page.locator(".auth-card")).to_be_visible(timeout=10_000)
         print("Sign out returns to the auth screen.")
 
+        # Password reset with the development token.
+        page.get_by_role("button", name="Forgot password?").click()
+        expect(
+            page.get_by_role("heading", name="Reset your password")
+        ).to_be_visible()
         page.get_by_label("Email").fill(email)
-        page.get_by_label("Password").fill(password)
+        page.get_by_role(
+            "button", name="Send reset link"
+        ).click()
+        expect(
+            page.get_by_role(
+                "heading", name="Choose a new password"
+            )
+        ).to_be_visible(timeout=10_000)
+
+        new_password = "another-strong-password-456"
+        page.get_by_label("New password").fill(new_password)
+        page.get_by_role(
+            "button", name="Update password"
+        ).click()
+        expect(
+            page.get_by_role("heading", name="Welcome back")
+        ).to_be_visible(timeout=10_000)
+
+        page.get_by_label("Email").fill(email)
+        page.get_by_label("Password").fill(new_password)
         page.locator(".auth-submit").click()
         expect(
             page.locator(".account-box", has_text=email)
         ).to_be_visible(timeout=15_000)
-        print("Login restores the account session.")
+        print("Password reset and login work.")
 
         page.get_by_role("button", name="Edit profile").click()
         expect(page.get_by_label("Degree")).to_have_value(
             "B.Tech", timeout=10_000
         )
-        print("Profile data survived logout and login.")
+        print("Profile data survived logout, reset, and login.")
 
         browser.close()
 
