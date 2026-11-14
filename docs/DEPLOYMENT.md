@@ -6,10 +6,11 @@ The project is deployed on Render:
 - **Database:** Render PostgreSQL (free, Oregon)
 - **CI:** GitHub Actions
 
-Current live limitation: `AUTH_REQUIRE_VERIFIED=0` because no Gmail SMTP
-credentials are configured yet. Add `SENDER_EMAIL` and
+The public demo intentionally runs with `AUTH_REQUIRE_VERIFIED=0` so
+visitors can sign up without a configured SMTP mailbox. Verification is
+implemented and tested. To enforce it, add `SENDER_EMAIL` and
 `SENDER_PASSWORD` in Render, then set `AUTH_REQUIRE_VERIFIED=1` and
-redeploy to enforce verification.
+redeploy.
 
 ## Production checklist
 

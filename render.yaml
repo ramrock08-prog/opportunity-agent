@@ -11,7 +11,8 @@ services:
         value: "1"
       - key: AUTH_REQUIRED
         value: "1"
-      # Flip to "1" after adding SENDER_EMAIL/SENDER_PASSWORD.
+      # Demo deployment: no SMTP mailbox required. Set to "1" after
+      # adding SENDER_EMAIL/SENDER_PASSWORD to enforce verification.
       - key: AUTH_REQUIRE_VERIFIED
         value: "0"
       - key: AUTH_DEV_SHOW_TOKENS

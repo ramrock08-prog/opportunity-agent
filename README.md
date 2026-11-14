@@ -459,10 +459,11 @@ These are documented intentionally rather than hidden.
 - **Database:** Render PostgreSQL (free instance, Oregon)
 - **CI:** GitHub Actions (backend tests, frontend lint/build, PostgreSQL tests)
 
-The deployed service currently runs with `AUTH_REQUIRE_VERIFIED=0` because
-Gmail SMTP credentials are not configured yet. The verification code and
-tests are complete; after adding `SENDER_EMAIL` and `SENDER_PASSWORD` in
-Render, set `AUTH_REQUIRE_VERIFIED=1` and redeploy. Do not enable
+The public demo intentionally runs with `AUTH_REQUIRE_VERIFIED=0` so
+visitors can create an account without needing an SMTP mailbox. Email
+verification is fully implemented and tested; to enforce it, add
+`SENDER_EMAIL` and `SENDER_PASSWORD` (Gmail app password) in Render,
+set `AUTH_REQUIRE_VERIFIED=1`, and redeploy. Do not enable
 `AUTH_DEV_SHOW_TOKENS` publicly.
 
 The free Render web instance sleeps after inactivity; the first request
