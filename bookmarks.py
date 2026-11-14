@@ -1,10 +1,11 @@
-﻿import json
-import os
-from pathlib import Path
+﻿import sqlite3
 from urllib.parse import urlparse
 
+from database import LEGACY_BOOKMARKS_FILE, get_connection, utc_now
 
-BOOKMARKS_FILE = Path(__file__).with_name("bookmarks.json")
+
+# Legacy JSON location, retained for migration and tooling.
+BOOKMARKS_FILE = LEGACY_BOOKMARKS_FILE
 
 
 def _valid_url(url: str) -> bool:
@@ -23,48 +24,29 @@ def _valid_url(url: str) -> bool:
 
 
 def load_bookmarks() -> list[str]:
-    """Load bookmarked opportunity URLs."""
-    if not BOOKMARKS_FILE.exists():
-        return []
-
+    """Load bookmarked opportunity URLs from SQLite."""
     try:
-        with BOOKMARKS_FILE.open(
-            "r", encoding="utf-8-sig"
-        ) as file:
-            data = json.load(file)
-    except json.JSONDecodeError as error:
-        raise RuntimeError(
-            "bookmarks.json contains invalid JSON."
-        ) from error
+        with get_connection() as connection:
+            rows = connection.execute(
+                """
+                SELECT url FROM bookmarks
+                ORDER BY created_at ASC, url ASC
+                """
+            ).fetchall()
+    except sqlite3.Error as error:
+        raise RuntimeError("Could not load bookmarks.") from error
 
-    if not isinstance(data, list):
-        raise RuntimeError(
-            "bookmarks.json must contain a JSON list."
-        )
+    urls = []
+    seen = set()
 
-    return list(dict.fromkeys(
-        url.strip()
-        for url in data
-        if isinstance(url, str) and _valid_url(url)
-    ))
+    for row in rows:
+        url = row["url"].strip()
 
+        if url not in seen and _valid_url(url):
+            seen.add(url)
+            urls.append(url)
 
-def _save_bookmarks(urls: list[str]) -> None:
-    """Write bookmarks using an atomic replacement."""
-    temporary_file = BOOKMARKS_FILE.with_suffix(".json.tmp")
-
-    try:
-        with temporary_file.open(
-            "w", encoding="utf-8"
-        ) as file:
-            json.dump(urls, file, indent=2)
-            file.write("\n")
-
-        os.replace(temporary_file, BOOKMARKS_FILE)
-
-    finally:
-        if temporary_file.exists():
-            temporary_file.unlink()
+    return urls
 
 
 def add_bookmark(url: str) -> list[str]:
@@ -72,22 +54,35 @@ def add_bookmark(url: str) -> list[str]:
     if not _valid_url(url):
         raise ValueError("A valid HTTP or HTTPS URL is required.")
 
-    urls = load_bookmarks()
-    url = url.strip()
+    try:
+        with get_connection() as connection:
+            connection.execute(
+                """
+                INSERT OR IGNORE INTO bookmarks(url, created_at)
+                VALUES(?, ?)
+                """,
+                (url.strip(), utc_now()),
+            )
+    except sqlite3.Error as error:
+        raise RuntimeError("Could not save the bookmark.") from error
 
-    if url not in urls:
-        urls.append(url)
-        _save_bookmarks(urls)
-
-    return urls
+    return load_bookmarks()
 
 
 def remove_bookmark(url: str) -> list[str]:
     """Remove a URL from the saved shortlist."""
-    urls = load_bookmarks()
-    remaining = [item for item in urls if item != url.strip()]
+    try:
+        with get_connection() as connection:
+            connection.execute(
+                "DELETE FROM bookmarks WHERE url = ?",
+                (url.strip(),),
+            )
+    except sqlite3.Error as error:
+        raise RuntimeError("Could not remove the bookmark.") from error
 
-    if remaining != urls:
-        _save_bookmarks(remaining)
+    return load_bookmarks()
 
-    return remaining
+
+def is_bookmarked(url: str) -> bool:
+    """Return True when a URL is currently bookmarked."""
+    return url.strip() in load_bookmarks()

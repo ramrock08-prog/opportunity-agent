@@ -1,4 +1,4 @@
-﻿from datetime import date, datetime
+from datetime import date, datetime
 from urllib.parse import urlparse
 
 from opportunity import Opportunity, ALLOWED_TYPES
@@ -14,7 +14,7 @@ SOCIAL_MEDIA_HOSTS = {
 }
 
 
-def _valid_http_url(value: str) -> bool:
+def valid_http_url(value: str) -> bool:
     """Check that a URL uses HTTP or HTTPS and has a hostname."""
     if not isinstance(value, str) or not value.strip():
         return False
@@ -72,10 +72,10 @@ def validate_opportunity(
     if opportunity.type not in ALLOWED_TYPES:
         problems.append("Unsupported opportunity type")
 
-    if not _valid_http_url(opportunity.source_url):
+    if not valid_http_url(opportunity.source_url):
         problems.append("Invalid source URL")
 
-    if not _valid_http_url(opportunity.application_url):
+    if not valid_http_url(opportunity.application_url):
         problems.append("Invalid application URL")
     else:
         host = _hostname(opportunity.application_url)

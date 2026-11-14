@@ -1,9 +1,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 import "./App.css";
+import OpportunityCard from "./OpportunityCard";
+import OpportunityDetail from "./OpportunityDetail";
 import ProfileEditor from "./ProfileEditor";
-
-const API_BASE = "http://127.0.0.1:8000";
+import { API_BASE, errorMessage, readJson } from "./api";
 
 const CATEGORIES = [
   { label: "All opportunities", value: "all" },
@@ -15,20 +16,6 @@ const CATEGORIES = [
   { label: "Competitions", value: "competition" },
   { label: "Research", value: "research" },
 ];
-
-function formatDate(value) {
-  if (!value) return "Not specified";
-
-  const date = new Date(`${value}T00:00:00`);
-
-  if (Number.isNaN(date.getTime())) return value;
-
-  return date.toLocaleDateString("en-IN", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-}
 
 function App() {
   const [opportunities, setOpportunities] = useState([]);
@@ -44,6 +31,8 @@ function App() {
   const [activeCategory, setActiveCategory] = useState("all");
   const [activeView, setActiveView] = useState("discover");
   const [searchText, setSearchText] = useState("");
+  const [sortMode, setSortMode] = useState("match");
+  const [detailItem, setDetailItem] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [reloadKey, setReloadKey] = useState(0);
@@ -137,13 +126,14 @@ function App() {
         }),
       });
 
-      const data = await response.json();
+      const data = await readJson(response);
 
       if (!response.ok) {
         throw new Error(
-          typeof data.detail === "string"
-            ? data.detail
-            : "Discovery failed. Check the backend terminal."
+          errorMessage(
+            data,
+            "Discovery failed. Check the backend terminal."
+          )
         );
       }
 
@@ -192,13 +182,11 @@ function App() {
             body: JSON.stringify({ url }),
           });
 
-      const data = await response.json();
+      const data = await readJson(response);
 
       if (!response.ok) {
         throw new Error(
-          typeof data.detail === "string"
-            ? data.detail
-            : "Could not update the bookmark."
+          errorMessage(data, "Could not update the bookmark.")
         );
       }
 
@@ -223,31 +211,36 @@ function App() {
 
   // Filter opportunities and attach their recommendation scores
   const visibleOpportunities = useMemo(() => {
-    const scoreByUrl = new Map(
+    const matchByUrl = new Map(
       recommendations.map((item) => [
         item.opportunity?.source_url,
-        item.score,
+        item,
       ])
     );
 
-    const scoreByTitle = new Map(
+    const matchByTitle = new Map(
       recommendations.map((item) => [
         item.opportunity?.title,
-        item.score,
+        item,
       ])
     );
 
-    let results = opportunities.map((item) => ({
-      ...item,
-      matchScore:
-        scoreByUrl.get(item.source_url) ??
-        scoreByTitle.get(item.title),
-    }));
+    let results = opportunities.map((item) => {
+      const match =
+        matchByUrl.get(item.source_url) ??
+        matchByTitle.get(item.title);
+
+      return {
+        ...item,
+        matchScore: match?.score,
+        matchReasons: match?.reasons || [],
+      };
+    });
 
     if (activeView === "recommended") {
-      results = results
-        .filter((item) => item.matchScore !== undefined)
-        .sort((a, b) => b.matchScore - a.matchScore);
+      results = results.filter(
+        (item) => item.matchScore !== undefined
+      );
     }
 
     if (activeView === "saved") {
@@ -282,6 +275,28 @@ function App() {
       });
     }
 
+    if (sortMode === "deadline") {
+      results = [...results].sort((a, b) =>
+        (a.deadline || "9999-12-31").localeCompare(
+          b.deadline || "9999-12-31"
+        )
+      );
+    } else if (sortMode === "title") {
+      results = [...results].sort((a, b) =>
+        a.title.localeCompare(b.title)
+      );
+    } else if (activeView !== "recommended") {
+      results = [...results].sort(
+        (a, b) => (b.matchScore ?? -1) - (a.matchScore ?? -1)
+      );
+    }
+
+    if (activeView === "recommended") {
+      results = [...results].sort(
+        (a, b) => b.matchScore - a.matchScore
+      );
+    }
+
     return results;
   }, [
     opportunities,
@@ -290,6 +305,7 @@ function App() {
     activeView,
     activeCategory,
     searchText,
+    sortMode,
   ]);
 
   const categoryCount = new Set(
@@ -346,6 +362,7 @@ function App() {
         >
           <span className="side-icon">★</span>
           Saved opportunities
+          <span className="side-count">{bookmarks.length}</span>
         </button>
 
         <div className="sidebar-label second-label">YOUR PROFILE</div>
@@ -558,11 +575,26 @@ function App() {
               />
             </label>
 
+            <label className="sort-control">
+              <span>Sort</span>
+              <select
+                value={sortMode}
+                onChange={(event) =>
+                  setSortMode(event.target.value)
+                }
+              >
+                <option value="match">Best match</option>
+                <option value="deadline">Deadline soonest</option>
+                <option value="title">Title A–Z</option>
+              </select>
+            </label>
+
             <button
               className="filter-reset"
               onClick={() => {
                 setSearchText("");
                 setActiveCategory("all");
+                setSortMode("match");
               }}
             >
               Clear filters
@@ -622,104 +654,16 @@ function App() {
             </div>
           ) : (
             <div className="opportunity-grid">
-              {visibleOpportunities.map((item) => {
-                const isSaved = bookmarks.includes(item.source_url);
-                const isBusy = Boolean(bookmarkBusy[item.source_url]);
-
-                return (
-                  <article
-                    className="opportunity-card"
-                    key={`${item.source_url}-${item.title}`}
-                    data-source-url={item.source_url}
-                  >
-                    <div className="card-topline">
-                      <span className={`type-badge type-${item.type}`}>
-                        {item.type}
-                      </span>
-
-                      {item.matchScore !== undefined && (
-                        <span className="match-badge">
-                          {item.matchScore}% match
-                        </span>
-                      )}
-
-                      <button
-                        className={`bookmark-button ${
-                          isSaved ? "saved" : ""
-                        }`}
-                        onClick={() => handleBookmark(item)}
-                        disabled={isBusy}
-                        aria-pressed={isSaved}
-                        aria-label={
-                          isSaved
-                            ? `Remove ${item.title} from saved opportunities`
-                            : `Save ${item.title}`
-                        }
-                      >
-                        {isBusy
-                          ? "Saving..."
-                          : isSaved
-                            ? "★ Saved"
-                            : "☆ Save"}
-                      </button>
-                    </div>
-
-                    <div className="company-line">
-                      <div className="company-avatar">
-                        {(item.organization || item.source || "O")
-                          .charAt(0)
-                          .toUpperCase()}
-                      </div>
-
-                      <span>
-                        {item.organization ||
-                          item.source ||
-                          "Organization not specified"}
-                      </span>
-                    </div>
-
-                    <h3>{item.title}</h3>
-
-                    <p className="card-description">
-                      {item.description ||
-                        "Description not provided by the source."}
-                    </p>
-
-                    <div className="metadata">
-                      <div>
-                        <span className="meta-label">LOCATION</span>
-                        <span>{item.location || "Not specified"}</span>
-                      </div>
-
-                      <div>
-                        <span className="meta-label">DEADLINE</span>
-                        <span>{formatDate(item.deadline)}</span>
-                      </div>
-                    </div>
-
-                    <div className="card-footer">
-                      <span className="source-label">
-                        Source: {item.source || "Web"}
-                      </span>
-
-                      {item.application_url ? (
-                        <a
-                          className="apply-link"
-                          href={item.application_url}
-                          target="_blank"
-                          rel="noreferrer"
-                        >
-                          View opportunity <span>↗</span>
-                        </a>
-                      ) : (
-                        <span className="muted-link">
-                          No link available
-                        </span>
-                      )}
-                    </div>
-                  </article>
-                );
-              })}
+              {visibleOpportunities.map((item) => (
+                <OpportunityCard
+                  key={`${item.source_url}-${item.title}`}
+                  item={item}
+                  isSaved={bookmarks.includes(item.source_url)}
+                  isBusy={Boolean(bookmarkBusy[item.source_url])}
+                  onBookmark={handleBookmark}
+                  onOpen={setDetailItem}
+                />
+              ))}
             </div>
           )}
         </section>
@@ -733,6 +677,22 @@ function App() {
           </span>
         </footer>
       </main>
+
+      {detailItem && (
+        <OpportunityDetail
+          key={detailItem.source_url}
+          item={detailItem}
+          matchInfo={recommendations.find(
+            (entry) =>
+              entry.opportunity?.source_url ===
+              detailItem.source_url
+          )}
+          isSaved={bookmarks.includes(detailItem.source_url)}
+          isBusy={Boolean(bookmarkBusy[detailItem.source_url])}
+          onBookmark={handleBookmark}
+          onClose={() => setDetailItem(null)}
+        />
+      )}
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-const API_BASE = "http://127.0.0.1:8000";
+import { API_BASE, errorMessage, readJson } from "./api";
 
 const TYPES = [
   "hackathon",
@@ -52,10 +52,12 @@ export default function ProfileEditor({ onSaved }) {
 
     try {
       const response = await fetch(`${API_BASE}/api/profile`);
-      const data = await response.json();
+      const data = await readJson(response);
 
       if (!response.ok) {
-        throw new Error(data.detail || "Could not load profile.");
+        throw new Error(
+          errorMessage(data, "Could not load profile.")
+        );
       }
 
       setForm(toForm(data));
@@ -115,14 +117,12 @@ export default function ProfileEditor({ onSaved }) {
         body: JSON.stringify(payload),
       });
 
-      const data = await response.json();
+      const data = await readJson(response);
 
       if (!response.ok) {
-        const detail = Array.isArray(data.detail)
-          ? data.detail.map((item) => item.msg).join(", ")
-          : data.detail;
-
-        throw new Error(detail || "Could not save profile.");
+        throw new Error(
+          errorMessage(data, "Could not save profile.")
+        );
       }
 
       setForm(toForm(data.profile));

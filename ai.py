@@ -71,6 +71,17 @@ STRICT ACCURACY RULES:
   Lower confidence when information is incomplete.
 - Return is_opportunity=false if the result does not provide
   enough evidence to identify one specific opportunity.
+- If you cannot quote the deadline from the supplied title or
+  content, set "deadline" to null. Never infer a deadline from a
+  start date, an academic year, or a typical hiring cycle.
+- Every eligibility item, skill, degree requirement, and year
+  requirement must be directly supported by the supplied text.
+  Omit anything that is not.
+- "evidence" must contain short verbatim snippets copied from the
+  supplied content that support the extracted facts. Do not
+  paraphrase inside quotes and do not invent quotes.
+- If a fact has no supporting snippet, leave the fact out rather
+  than guessing.
 
 Determine whether it describes a real opportunity such as:
 a hackathon, internship, job, scholarship, fellowship,
@@ -99,7 +110,9 @@ Return exactly one JSON object with these fields:
   "year_requirements": [],
   "stipend": null,
   "prize_money": null,
-  "confidence": 0.0
+  "confidence": 0.0,
+  "evidence": [],
+  "deadline_evidence": null
 }}
 
 Rules:
@@ -112,6 +125,9 @@ Rules:
 - Use true or false for remote only when the evidence supports it;
   otherwise use null.
 - Keep eligibility and requirement fields as lists of strings.
+- "evidence" must be a list of short verbatim snippets.
+- "deadline_evidence" must be the exact snippet containing the
+  deadline, or null when the deadline is null.
 - Confidence must be a number from 0 to 1.
 - Never claim that an opportunity is open unless the evidence supports it.
 - Do not treat search ranking or your own guess as evidence.
@@ -184,6 +200,12 @@ Search result content:
         if not isinstance(application_url, str) or not application_url.strip():
             application_url = url
 
+        deadline_evidence = data.get("deadline_evidence")
+        if not isinstance(deadline_evidence, str):
+            deadline_evidence = None
+        else:
+            deadline_evidence = deadline_evidence.strip() or None
+
         opportunity = Opportunity(
             title=opportunity_title,
             type=opportunity_type,
@@ -208,6 +230,8 @@ Search result content:
             prize_money=data.get("prize_money"),
             source=source_host,
             confidence=confidence,
+            evidence=_as_list(data.get("evidence")),
+            deadline_evidence=deadline_evidence,
         )
         is_valid, problems = validate_opportunity(opportunity)
 

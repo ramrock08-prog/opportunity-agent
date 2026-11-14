@@ -1,10 +1,13 @@
 ﻿import json
-import os
+import sqlite3
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
+from database import LEGACY_PROFILE_FILE, get_connection, utc_now
 
-PROFILE_FILE = Path(__file__).with_name("profile.json")
+
+# Legacy JSON location, retained for migration and tooling.
+PROFILE_FILE = LEGACY_PROFILE_FILE
 
 SUPPORTED_TYPES = {
     "hackathon",
@@ -114,47 +117,63 @@ class UserProfile:
 
 def load_profile() -> UserProfile:
     """Load the profile, or return defaults if none exists yet."""
+    try:
+        with get_connection() as connection:
+            row = connection.execute(
+                "SELECT payload FROM profile WHERE id = 1"
+            ).fetchone()
+    except sqlite3.Error as error:
+        raise RuntimeError("Could not read the profile.") from error
 
-    if not PROFILE_FILE.exists():
+    if row is None:
         return UserProfile()
 
     try:
-        with PROFILE_FILE.open("r", encoding="utf-8-sig") as file:
-            data = json.load(file)
-
-        if not isinstance(data, dict):
-            raise ValueError("Profile file must contain a JSON object.")
-
-        allowed_fields = UserProfile.__dataclass_fields__.keys()
-        clean_data = {
-            key: value
-            for key, value in data.items()
-            if key in allowed_fields
-        }
-
-        return UserProfile(**clean_data)
-
-    except (json.JSONDecodeError, TypeError) as error:
+        data = json.loads(row["payload"])
+    except json.JSONDecodeError as error:
         raise RuntimeError(
-            "Could not read profile.json. Check its contents."
+            "The stored profile contains invalid JSON."
         ) from error
+
+    if not isinstance(data, dict):
+        raise ValueError("Profile must contain a JSON object.")
+
+    allowed_fields = UserProfile.__dataclass_fields__.keys()
+    clean_data = {
+        key: value
+        for key, value in data.items()
+        if key in allowed_fields
+    }
+
+    return UserProfile(**clean_data)
 
 
 def save_profile(profile: UserProfile) -> None:
-    """Save a profile safely using a temporary file."""
-
+    """Validate and save a profile in SQLite."""
     if not isinstance(profile, UserProfile):
         raise TypeError("profile must be a UserProfile instance.")
 
-    temporary_file = PROFILE_FILE.with_suffix(".json.tmp")
-
     try:
-        with temporary_file.open("w", encoding="utf-8") as file:
-            json.dump(profile.to_dict(), file, indent=2)
-            file.write("\n")
+        with get_connection() as connection:
+            connection.execute(
+                """
+                INSERT INTO profile(id, payload, updated_at)
+                VALUES(1, ?, ?)
+                ON CONFLICT(id) DO UPDATE SET
+                    payload = excluded.payload,
+                    updated_at = excluded.updated_at
+                """,
+                (
+                    json.dumps(
+                        profile.to_dict(), ensure_ascii=False
+                    ),
+                    utc_now(),
+                ),
+            )
+    except sqlite3.Error as error:
+        raise RuntimeError("Could not save the profile.") from error
 
-        os.replace(temporary_file, PROFILE_FILE)
 
-    finally:
-        if temporary_file.exists():
-            temporary_file.unlink()
+def profile_file_path() -> Path:
+    """Return the legacy profile file path for diagnostics only."""
+    return PROFILE_FILE

@@ -5,6 +5,26 @@ from dotenv import load_dotenv
 load_dotenv()
 
 APP_NAME = "Opportunity Agent"
+APP_ENV = os.getenv("APP_ENV", "development").strip().lower()
+
+
+def _parse_origins(value: str) -> list[str]:
+    """Parse a comma-separated CORS allow-list."""
+    origins = [
+        item.strip().rstrip("/")
+        for item in value.split(",")
+        if item.strip()
+    ]
+
+    return list(dict.fromkeys(origins))
+
+
+ALLOWED_ORIGINS = _parse_origins(
+    os.getenv(
+        "CORS_ORIGINS",
+        "http://localhost:5173,http://127.0.0.1:5173",
+    )
+)
 
 # AI configuration
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")

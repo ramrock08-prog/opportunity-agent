@@ -111,7 +111,56 @@ def _run_browser_test(original_bookmarks: list[str]) -> int:
         )
         print("Saved state survives a page refresh.")
 
-        # 3. Saved view shows the bookmark.
+        # 3. Details drawer opens, shows the record, and closes with Escape.
+        page.route(
+            "**/api/opportunities/verify",
+            lambda route: route.fulfill(
+                status=200,
+                content_type="application/json",
+                body=json.dumps({
+                    "status": "checked",
+                    "verification": {
+                        "application": {
+                            "status": "reachable",
+                            "status_code": 200,
+                            "message": "The page returned HTTP 200.",
+                        },
+                        "source": {
+                            "status": "reachable",
+                            "status_code": 200,
+                            "message": "The page returned HTTP 200.",
+                        },
+                        "deadline": {
+                            "message": "No deadline was published."
+                        },
+                        "disclaimer": (
+                            "A reachable link does not confirm that "
+                            "applications are open."
+                        ),
+                    },
+                }),
+            ),
+        )
+
+        reloaded.locator(".details-button").click()
+        dialog = page.get_by_role("dialog")
+        expect(dialog).to_be_visible(timeout=10_000)
+        expect(dialog.locator("#detail-title")).to_have_text(title)
+        expect(dialog).to_contain_text("extracted automatically")
+
+        dialog.get_by_role(
+            "button", name="Check links now"
+        ).click()
+        expect(dialog).to_contain_text("Reachable", timeout=10_000)
+        expect(dialog).to_contain_text(
+            "does not confirm that applications are open"
+        )
+
+        page.keyboard.press("Escape")
+        expect(dialog).to_have_count(0, timeout=10_000)
+        print("Details drawer and link check work correctly.")
+
+        # 4. Saved view shows the bookmark.
         page.locator(
             ".side-link", has_text="Saved opportunities"
         ).click()
@@ -122,7 +171,7 @@ def _run_browser_test(original_bookmarks: list[str]) -> int:
         assert saved_count >= 1, "Saved view did not render any cards."
         print(f"Saved view shows {saved_count} bookmarked card(s).")
 
-        # 4. Remove from the saved view and confirm it disappears.
+        # 5. Remove from the saved view and confirm it disappears.
         saved_card = page.locator(".opportunity-card", has_text=title)
         saved_card.locator(".bookmark-button").click()
         expect(

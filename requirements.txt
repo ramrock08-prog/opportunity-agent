@@ -1,5 +1,6 @@
-﻿google-genai
-requests
-python-dotenv
-fastapi
-uvicorn[standard]
+﻿google-genai==2.29.0
+requests==2.34.2
+python-dotenv==1.2.4
+fastapi==0.143.0
+uvicorn[standard]==0.54.0
+pydantic==2.14.0

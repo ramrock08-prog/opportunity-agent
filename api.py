@@ -1,15 +1,20 @@
-﻿from bookmarks import add_bookmark, load_bookmarks, remove_bookmark
+﻿import threading
+
+from bookmarks import add_bookmark, load_bookmarks, remove_bookmark
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
+from config import ALLOWED_ORIGINS
+from database import healthcheck as database_healthcheck
 from opportunity import ALLOWED_TYPES
 from profile import UserProfile, load_profile, save_profile
 from run_agent import run_agent as execute_discovery
 from scorer import rank_opportunities
 from search import SEARCH_QUERIES
-from storage import load_opportunities
+from storage import find_opportunity, load_opportunities
 from validator import validate_opportunity
+from verification import verify_opportunity
 
 
 class DiscoveryRequest(BaseModel):
@@ -45,6 +50,16 @@ class ProfileUpdate(BaseModel):
 class BookmarkRequest(BaseModel):
     url: str
 
+
+class VerifyRequest(BaseModel):
+    source_url: str
+
+
+# Only one discovery job may write at a time in this process. This avoids
+# two requests replacing the opportunity collection simultaneously.
+_discovery_lock = threading.Lock()
+
+
 app = FastAPI(
     title="Opportunity Agent API",
     description="Discover, validate, and recommend opportunities for students.",
@@ -53,12 +68,9 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-    ],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
 
@@ -95,7 +107,13 @@ def home():
 
 @app.get("/api/health")
 def health():
-    return {"status": "ok", "app": "Opportunity Agent"}
+    database_ready = database_healthcheck()
+
+    return {
+        "status": "ok" if database_ready else "degraded",
+        "app": "Opportunity Agent",
+        "storage": "sqlite" if database_ready else "unavailable",
+    }
 
 @app.get("/api/bookmarks")
 def get_bookmarks():
@@ -199,7 +217,21 @@ def discover(request: DiscoveryRequest):
             detail="Unsupported opportunity category.",
         )
 
-    result = execute_discovery(category, request.limit)
+    if not _discovery_lock.acquire(blocking=False):
+        raise HTTPException(
+            status_code=409,
+            detail="A discovery run is already in progress. Try again shortly.",
+        )
+
+    try:
+        result = execute_discovery(category, request.limit)
+    except Exception as error:
+        raise HTTPException(
+            status_code=500,
+            detail="Discovery stopped unexpectedly. Check the backend logs.",
+        ) from error
+    finally:
+        _discovery_lock.release()
 
     if result != 0:
         raise HTTPException(
@@ -216,6 +248,37 @@ def discover(request: DiscoveryRequest):
         "opportunities": [
             item.to_dict() for item in opportunities
         ],
+    }
+
+
+@app.post("/api/opportunities/verify")
+def verify_stored_opportunity(request: VerifyRequest):
+    """Check links for a stored opportunity, on demand.
+
+    Only URLs already present in storage are fetched. Accepting
+    arbitrary URLs here would create a server-side request forgery
+    risk.
+    """
+    opportunity = find_opportunity(request.source_url)
+
+    if opportunity is None:
+        raise HTTPException(
+            status_code=404,
+            detail="No stored opportunity matches that source URL.",
+        )
+
+    try:
+        verification = verify_opportunity(opportunity)
+    except Exception as error:
+        raise HTTPException(
+            status_code=502,
+            detail="The link check could not be completed.",
+        ) from error
+
+    return {
+        "status": "checked",
+        "source_url": opportunity.source_url,
+        "verification": verification,
     }
 
 

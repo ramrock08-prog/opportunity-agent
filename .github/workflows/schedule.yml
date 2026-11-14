@@ -1,46 +1,95 @@
-name: UAV Drone Scout
+name: Opportunity Agent discovery
 
 on:
-  workflow_dispatch:       # Manual trigger button stays available
+  workflow_dispatch:
+    inputs:
+      category:
+        description: Opportunity category to search
+        required: true
+        default: internship
+        type: choice
+        options:
+          - hackathon
+          - internship
+          - job
+          - scholarship
+          - fellowship
+          - competition
+          - research
+      limit:
+        description: Maximum Gemini extractions (1-10)
+        required: true
+        default: "3"
+        type: string
   schedule:
-    - cron: '0 */7 * * *'  # Every 7 hours exactly
+    # Daily at 06:00 UTC. Keep this small to control API costs.
+    - cron: "0 6 * * *"
 
-# Critical: allows bot to save hackathons.json back to repo
 permissions:
   contents: write
 
+concurrency:
+  group: opportunity-discovery
+  cancel-in-progress: false
+
 jobs:
-  scout:
+  discover:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     steps:
-      - name: Checkout repository
+      - name: Check out repository
         uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install requests google-genai
+          pip install -r requirements.txt
 
-      - name: Run Scout Agent
-        env:
-          GEMINI_API_KEY:   ${{ secrets.GEMINI_API_KEY }}
-          TAVILY_API_KEY:   ${{ secrets.TAVILY_API_KEY }}
-          SENDER_EMAIL:     ${{ secrets.SENDER_EMAIL }}
-          SENDER_PASSWORD:  ${{ secrets.SENDER_PASSWORD }}
-          RECEIVER_EMAIL:   ${{ secrets.RECEIVER_EMAIL }}
-        run: python agent.py
-
-      # Saves memory only if hackathons.json actually changed
-      - name: Save Memory Bank
+      - name: Restore opportunity memory into SQLite
         run: |
-          git config --global user.name  "drone-scout-bot"
-          git config --global user.email "drone-scout-bot@users.noreply.github.com"
-          git add hackathons.json
-          git diff --staged --quiet || git commit -m "🤖 Update hackathon memory [skip ci]"
-          git push || echo "Nothing new to push."
+          python - <<'PY'
+          from database import initialize_database
+
+          print("SQLite schema ready:", initialize_database())
+          PY
+
+      - name: Run discovery
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
+        run: |
+          python run_agent.py \
+            --category "${{ inputs.category || 'internship' }}" \
+            --limit "${{ inputs.limit || '3' }}"
+
+      - name: Export a portable JSON snapshot
+        run: |
+          python - <<'PY'
+          from storage import export_opportunities_json
+
+          path = export_opportunities_json("opportunities.json")
+          print("Snapshot written:", path)
+          PY
+
+      - name: Save opportunity memory
+        run: |
+          git config user.name "opportunity-agent-bot"
+          git config user.email "opportunity-agent-bot@users.noreply.github.com"
+          git add opportunities.json
+          git diff --staged --quiet || \
+            git commit -m "chore: update opportunity snapshot [skip ci]"
+          git push || echo "Nothing to push."
+
+      - name: Email digest (optional)
+        continue-on-error: true
+        env:
+          SENDER_EMAIL: ${{ secrets.SENDER_EMAIL }}
+          SENDER_PASSWORD: ${{ secrets.SENDER_PASSWORD }}
+          RECEIVER_EMAIL: ${{ secrets.RECEIVER_EMAIL }}
+        run: python notify.py --send
