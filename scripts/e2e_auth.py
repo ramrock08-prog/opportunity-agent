@@ -139,6 +139,20 @@ def main() -> int:
             "New-account profile onboarding saves and starts discovery."
         )
 
+        # The always-visible button must open the file chooser too.
+        with page.expect_file_chooser() as chooser:
+            page.get_by_role("button", name="Import resume").click()
+        chooser.value.set_files({
+            "name": "resume.txt",
+            "mimeType": "text/plain",
+            "buffer": b"Existing student. B.Tech ECE. Skills: Python.",
+        })
+        expect(page.locator(".resume-message")).to_contain_text(
+            "Imported resume.txt", timeout=10_000
+        )
+        page.get_by_role("button", name="Close editor").click()
+        print("Always-visible Import resume button works.")
+
         page.locator(".account-box button", has_text="Sign out").click()
         expect(page.locator(".auth-card")).to_be_visible(timeout=10_000)
         print("Sign out returns to the auth screen.")

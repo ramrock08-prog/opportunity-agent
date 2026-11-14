@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { apiFetch, errorMessage, readJson } from "./api";
 
@@ -45,12 +45,35 @@ export default function ProfileEditor({
   const [resumeBusy, setResumeBusy] = useState(false);
   const [resumeMessage, setResumeMessage] = useState("");
   const [resumeError, setResumeError] = useState("");
+  const fileInputRef = useRef(null);
+  const pendingResumeOpen = useRef(false);
 
   function openEditor() {
     setOpen(true);
     setMessage("");
     setError("");
   }
+
+  function startResumeImport() {
+    setMessage("");
+    setError("");
+    setResumeError("");
+
+    if (open) {
+      fileInputRef.current?.click();
+      return;
+    }
+
+    pendingResumeOpen.current = true;
+    setOpen(true);
+  }
+
+  useEffect(() => {
+    if (open && pendingResumeOpen.current) {
+      pendingResumeOpen.current = false;
+      fileInputRef.current?.click();
+    }
+  }, [open, form]);
 
   // Load once when the editor opens, including the first-run auto-open.
   useEffect(() => {
@@ -209,22 +232,31 @@ export default function ProfileEditor({
           <p>
             {initiallyOpen
               ? "Tell us what you study and what you are interested in so recommendations are relevant."
-              : "Help the agent discover opportunities that suit you."}
+              : "Import a resume to auto-fill your details, or edit the profile manually."}
           </p>
         </div>
 
-        <button
-          className="discover-button"
-          onClick={() => {
-            if (open) {
-              setOpen(false);
-            } else {
-              openEditor();
-            }
-          }}
-        >
-          {open ? "Close editor" : "Edit profile"}
-        </button>
+        <div className="profile-heading-actions">
+          <button
+            className="resume-heading-button"
+            onClick={startResumeImport}
+          >
+            Import resume
+          </button>
+
+          <button
+            className="discover-button"
+            onClick={() => {
+              if (open) {
+                setOpen(false);
+              } else {
+                openEditor();
+              }
+            }}
+          >
+            {open ? "Close editor" : "Edit profile"}
+          </button>
+        </div>
       </div>
 
       {message && (
@@ -255,6 +287,7 @@ export default function ProfileEditor({
             >
               {resumeBusy ? "Reading resume..." : "Upload resume"}
               <input
+                ref={fileInputRef}
                 type="file"
                 accept=".pdf,.docx,.txt"
                 onChange={handleResumeFile}

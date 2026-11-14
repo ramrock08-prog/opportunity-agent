@@ -57,7 +57,9 @@ email digest, and GitHub Actions ideas are preserved and generalized.
 - Opportunity detail drawer with eligibility, skills, stipend, evidence,
   source/application links, and a manual link check.
 - First-run profile onboarding for new accounts.
-- Resume/CV upload (PDF, DOCX, TXT) auto-fills the profile with Gemini.
+- Resume/CV upload (PDF, DOCX, TXT) auto-fills the profile with Gemini,
+  available from first-run onboarding and an always-visible Import resume
+  button.
 - Automatic internship/job discovery after the first profile save.
 - Profile editor for degree, branch, year, skills, interests, locations,
   remote preference, and categories.

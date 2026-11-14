@@ -2216,3 +2216,33 @@
   border-width: 2px;
   flex-shrink: 0;
 }
+
+.profile-heading-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+
+.resume-heading-button {
+  padding: 9px 13px;
+  border: 1px solid #d8d0fa;
+  border-radius: 8px;
+  background: #fff;
+  color: #5d47c8;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 800;
+  transition: 160ms ease;
+}
+
+.resume-heading-button:hover {
+  background: #f3efff;
+  border-color: #bfb3f5;
+}
+
+@media (max-width: 650px) {
+  .profile-heading-actions {
+    width: 100%;
+  }
+}
