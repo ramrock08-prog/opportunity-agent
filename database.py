@@ -31,7 +31,7 @@ LEGACY_OPPORTUNITIES_FILE = BASE_DIR / "opportunities.json"
 LEGACY_BOOKMARKS_FILE = BASE_DIR / "bookmarks.json"
 LEGACY_PROFILE_FILE = BASE_DIR / "profile.json"
 
-SCHEMA_VERSION = "3"
+SCHEMA_VERSION = "4"
 DEMO_USER_ID = 1
 DEMO_USER_EMAIL = "demo@opportunity.local"
 
@@ -326,6 +326,17 @@ def _schema_sql() -> str:
         acquired_at TEXT NOT NULL,
         expires_at TEXT NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS discovery_candidates (
+        url TEXT PRIMARY KEY,
+        category TEXT NOT NULL,
+        attempts INTEGER NOT NULL DEFAULT 0,
+        last_attempted TEXT,
+        outcome TEXT
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_discovery_candidates_category
+        ON discovery_candidates(category, last_attempted);
     """
 
 

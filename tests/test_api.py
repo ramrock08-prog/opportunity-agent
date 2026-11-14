@@ -142,6 +142,30 @@ def test_discovery_rejects_unknown_category(isolated_db):
     assert response.status_code == 422
 
 
+def test_discovery_passes_profile_and_limit(
+    isolated_db, monkeypatch
+):
+    captured = {}
+
+    def fake_discovery(category, limit, profile):
+        captured["category"] = category
+        captured["limit"] = limit
+        captured["profile"] = profile
+        return 0
+
+    monkeypatch.setattr(api, "execute_discovery", fake_discovery)
+
+    response = client.post(
+        "/api/discover",
+        json={"category": "internship", "limit": 8},
+    )
+
+    assert response.status_code == 200, response.text
+    assert captured["category"] == "internship"
+    assert captured["limit"] == 8
+    assert captured["profile"] is not None
+
+
 def test_discovery_returns_conflict_while_locked(isolated_db):
     from locks import acquire_lock, release_lock
 

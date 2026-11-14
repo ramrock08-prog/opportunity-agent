@@ -194,7 +194,7 @@ function App() {
         },
         body: JSON.stringify({
           category,
-          limit: 3,
+          limit: 8,
         }),
       });
 
@@ -306,7 +306,7 @@ function App() {
         const response = await apiFetch("/api/discover", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ category, limit: 2 }),
+          body: JSON.stringify({ category, limit: 5 }),
         });
         const data = await readJson(response);
 

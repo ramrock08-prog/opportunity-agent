@@ -59,7 +59,7 @@ from verification import verify_opportunity
 
 class DiscoveryRequest(BaseModel):
     category: str = "internship"
-    limit: int = Field(default=3, ge=1, le=3)
+    limit: int = Field(default=8, ge=1, le=10)
 
 
 class ProfileUpdate(BaseModel):
@@ -720,7 +720,10 @@ def discover(
         )
 
     try:
-        result = execute_discovery(category, request.limit)
+        profile = load_profile(user["id"])
+        result = execute_discovery(
+            category, request.limit, profile
+        )
     except Exception as error:
         raise HTTPException(
             status_code=500,

@@ -29,6 +29,7 @@ TABLES = (
     "auth_tokens",
     "rate_limits",
     "discovery_locks",
+    "discovery_candidates",
     "user_bookmarks",
     "user_profiles",
     "users",
