@@ -39,7 +39,10 @@ email digest, and GitHub Actions ideas are preserved and generalized.
 ## Features
 
 ### Discovery and AI
-- Tavily web search across seven opportunity categories.
+- Profile-aware Tavily search across seven opportunity categories.
+- Deep internship/job search with official-career queries, directory
+  filtering, and up to 10 Gemini extractions per run.
+- Candidate history so repeated searches keep finding new listings.
 - Gemini structured extraction with strict anti-hallucination rules.
 - Verbatim evidence snippets stored with each record.
 - Deadlines are only accepted when the source supports them.
@@ -87,7 +90,7 @@ email digest, and GitHub Actions ideas are preserved and generalized.
 - Verification and reset emails through Gmail SMTP.
 - GitHub Actions scheduled discovery with JSON snapshot persistence.
 - Docker multi-stage build; Render blueprint included.
-- 76 SQLite tests + 4 PostgreSQL integration tests, plus two Playwright
+- 86 SQLite tests + 4 PostgreSQL integration tests, plus two Playwright
   browser flows.
 
 ---
@@ -292,9 +295,9 @@ when authentication is enabled.
 .\.venv\Scripts\python.exe -m pytest
 ```
 
-Current result: **76 passed, 4 skipped** with SQLite (PostgreSQL tests
+Current result: **86 passed, 4 skipped** with SQLite (PostgreSQL tests
 are skipped unless a database is configured). With the local PostgreSQL
-server enabled: **80 passed**.
+server enabled: **90 passed**.
 
 ```powershell
 # Starts a temporary PostgreSQL server with pgserver and runs the 3
@@ -377,7 +380,7 @@ resume.py               PDF/DOCX/TXT resume text extraction
 ├── run_agent.py            Discovery pipeline CLI
 ├── notify.py               HTML email digest
 ├── agent.py                Legacy original drone scout (kept for history)
-├── tests/                  76 SQLite tests + 4 PostgreSQL tests
+├── tests/                  86 SQLite tests + 4 PostgreSQL tests
 ├── scripts/
 │   ├── e2e_bookmarks.py    Playwright bookmark/details flow
 │   ├── e2e_auth.py         Playwright auth flow
@@ -466,6 +469,7 @@ These are documented intentionally rather than hidden.
 - **Host:** Render Docker web service (free instance)
 - **Database:** Render PostgreSQL (free instance, Oregon)
 - **CI:** GitHub Actions (backend tests, frontend lint/build, PostgreSQL tests)
+- **Current feed:** 20+ internships plus scholarship and fellowship records
 
 The public demo intentionally runs with `AUTH_REQUIRE_VERIFIED=0` so
 visitors can create an account without needing an SMTP mailbox. Email

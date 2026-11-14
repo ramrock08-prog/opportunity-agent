@@ -10,6 +10,7 @@ TRAINING_LISTING_TERMS = {
     "bootcamp",
     "certification course",
     "course with certificate",
+    "training",
 }
 
 SOCIAL_MEDIA_HOSTS = {

@@ -23,7 +23,7 @@ software engineering or AI/ML placement interview.
 5. **Profile** — change a skill or interest, save, and show the
    recommendation score/reasons changing.
 6. **API docs** — open `/docs`, mention validation and auth dependencies.
-7. **Tests** — run `pytest`, mention 80 tests and the Playwright flows.
+7. **Tests** — run `pytest`, mention 90 tests and the Playwright flows.
 8. **Architecture** — open `docs/ARCHITECTURE.md`; discuss trust
    boundaries and SQLite trade-offs.
 
@@ -83,6 +83,12 @@ interviewer asks; it spends Tavily/Gemini credits and takes time.
 The pipeline is small and explicit: search → extract → validate →
 deduplicate → store. A framework would hide the data-quality decisions
 that matter most here. The current code is easier to test and debug.
+
+**Why did the first version find so few internships?**
+The pipeline was only sending 2–3 Tavily results to Gemini per run.
+Now it builds profile-aware queries (skills/interests), searches official
+career sites, filters directories, processes up to 10 results, and skips
+recently attempted URLs so repeated runs keep finding new listings.
 
 **How do you stop hallucinations?**
 Multiple layers: strict prompt rules, evidence-only extraction,
@@ -146,7 +152,7 @@ contains. The product communicates this uncertainty instead of hiding it.
 
 ## Metrics to quote accurately
 
-- 80 automated tests: 76 SQLite + 4 PostgreSQL integration tests.
+- 90 automated tests: 86 SQLite + 4 PostgreSQL integration tests.
 - 2 Playwright browser flows (bookmarks/detail, verification/reset/profile).
 - 7 opportunity categories.
 - 6 scoring components with transparent reasons.

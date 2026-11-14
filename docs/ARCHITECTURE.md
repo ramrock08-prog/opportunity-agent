@@ -92,17 +92,21 @@ search.py (Tavily) -> ai.py (Gemini) -> validator.py -> dedup.py
 2. `locks.acquire_lock("discovery")` inserts a row with an expiry. The
    unique key makes the lock work across processes sharing the database.
 3. A stale lock expires after 20 minutes and can be taken over.
-4. Tavily returns web results for one category.
-5. Each result is sent to Gemini with strict extraction rules.
-6. Gemini returns one JSON record plus evidence snippets.
-7. `validator.py` rejects records with bad URLs, unsupported types, low
-   confidence, malformed dates, past deadlines, or social-media-only
-   application links.
-8. `dedup.py` removes duplicates by normalized URL or title +
-   organization.
-9. `storage.py` replaces the opportunity collection in one transaction,
-   preserving `created_at` for unchanged source keys.
-10. The lock is released in a `finally` block.
+4. Tavily runs profile-aware queries, including official `site:` career
+   searches for internships and jobs.
+5. Directory, social, and search-result pages are filtered out.
+6. Recently attempted URLs are skipped for 14 days, so repeated runs
+   move deeper into the result set.
+7. Each remaining result is sent to Gemini with strict extraction rules.
+8. Gemini returns one JSON record plus evidence snippets.
+9. `validator.py` rejects bad URLs, unsupported types, low confidence,
+   malformed/past deadlines, training-course listings, and
+   social-media-only application links.
+10. `dedup.py` removes duplicates by normalized URL or title +
+    organization.
+11. `storage.py` replaces the opportunity collection in one transaction,
+    preserving `created_at` for unchanged source keys.
+12. The lock is released in a `finally` block.
 
 ### Link verification
 
@@ -156,6 +160,10 @@ auth_tokens(
 rate_limits(limit_key PRIMARY KEY, window_start REAL, count)
 
 discovery_locks(name PRIMARY KEY, owner, acquired_at, expires_at)
+
+discovery_candidates(
+  url PRIMARY KEY, category, attempts, last_attempted, outcome
+)
 ```
 
 Legacy tables `profile` and `bookmarks` are read once during migration
