@@ -5,7 +5,9 @@
 
 **An AI-powered opportunity discovery platform for students.**
 
-Repository: <https://github.com/ramrock08-prog/opportunity-agent>
+Repository: <https://github.com/ramrock08-prog/opportunity-agent>  
+Live demo: <https://opportunity-agent-v39s.onrender.com>  
+CI: [all backend, frontend, and PostgreSQL jobs passing](https://github.com/ramrock08-prog/opportunity-agent/actions)
 
 Opportunity Agent searches the web for internships, hackathons, jobs,
 scholarships, fellowships, competitions, and research programs; extracts
@@ -450,6 +452,25 @@ These are documented intentionally rather than hidden.
 
 ---
 
+## Live deployment
+
+- **URL:** <https://opportunity-agent-v39s.onrender.com>
+- **Host:** Render Docker web service (free instance)
+- **Database:** Render PostgreSQL (free instance, Oregon)
+- **CI:** GitHub Actions (backend tests, frontend lint/build, PostgreSQL tests)
+
+The deployed service currently runs with `AUTH_REQUIRE_VERIFIED=0` because
+Gmail SMTP credentials are not configured yet. The verification code and
+tests are complete; after adding `SENDER_EMAIL` and `SENDER_PASSWORD` in
+Render, set `AUTH_REQUIRE_VERIFIED=1` and redeploy. Do not enable
+`AUTH_DEV_SHOW_TOKENS` publicly.
+
+The free Render web instance sleeps after inactivity; the first request
+may take several seconds. The free PostgreSQL instance is managed by
+Render and may have its own retention policy.
+
+---
+
 ## Roadmap status
 
 - **Phase A — Core frontend:** complete (details, saved count, filters,
@@ -462,8 +483,9 @@ These are documented intentionally rather than hidden.
   Actions restored on the generalized pipeline.
 - **Phase E - Accounts:** JWT auth, verification, reset, lockout,
   revocable sessions, rate limits, and per-user isolation.
-- **Phase F — Deployment:** Docker, Render blueprint, documentation;
-  an actual public deployment still needs your hosting account and keys.
+- **Phase F - Deployment:** deployed on Render with PostgreSQL, Docker
+  packaging, CI, and documentation. Email verification is one environment
+  variable away once SMTP credentials are added.
 - **Phase G — Interview readiness:** see
   [`docs/INTERVIEW.md`](docs/INTERVIEW.md) for a demo script, likely
   questions, and a code tour.

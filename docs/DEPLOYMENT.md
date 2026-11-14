@@ -1,8 +1,15 @@
 # Deployment guide
 
-The repository is deployment-ready, but **no public deployment has been
-performed yet**. You need your own hosting account, API keys, SMTP
-credentials, and (optionally) a PostgreSQL database.
+The project is deployed on Render:
+
+- **App:** <https://opportunity-agent-v39s.onrender.com>
+- **Database:** Render PostgreSQL (free, Oregon)
+- **CI:** GitHub Actions
+
+Current live limitation: `AUTH_REQUIRE_VERIFIED=0` because no Gmail SMTP
+credentials are configured yet. Add `SENDER_EMAIL` and
+`SENDER_PASSWORD` in Render, then set `AUTH_REQUIRE_VERIFIED=1` and
+redeploy to enforce verification.
 
 ## Production checklist
 
@@ -72,29 +79,25 @@ import if the database is empty. `DATABASE_URL` takes precedence over
 
 ## Option 3: Render
 
-`render.yaml` defines a Docker web service with:
+`render.yaml` defines a free Docker web service with:
 
 - health check `/api/health`
 - generated `AUTH_SECRET`
-- required email verification
 - rate limiting enabled and `TRUST_PROXY=1`
 - secret prompts for Gemini, Tavily, and email credentials
-- a 1 GB disk mounted at `/app/data` (SQLite mode)
+- free-plan SQLite fallback at `/app/data/opportunity_agent.db`
 
-Before applying it:
-
-1. Update `CORS_ORIGINS` and `PUBLIC_APP_URL` to the real Render URL.
-2. Add `SENDER_EMAIL`, `SENDER_PASSWORD`, and `RECEIVER_EMAIL` so users
-   can receive verification and reset emails.
-3. Optionally add a Render PostgreSQL instance and set `DATABASE_URL`
-   instead of using the disk.
+The live service uses a **Render PostgreSQL** database instead of the
+ephemeral SQLite fallback. Create a free Render Postgres instance in the
+same region (Oregon) and set `DATABASE_URL` from its internal connection
+string. Cross-region internal URLs do not work.
 
 ```text
 New Render Blueprint -> select this repository -> apply render.yaml
 ```
 
-The blueprint uses the `starter` plan because persistent disks are not
-available on every free tier. SQLite durability depends on that disk.
+The free web plan has ephemeral storage; PostgreSQL is required for
+durable accounts/bookmarks.
 
 ## Email configuration
 
