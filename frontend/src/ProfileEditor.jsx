@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { apiFetch, errorMessage, readJson } from "./api";
 
@@ -33,40 +33,53 @@ function toList(value) {
     .filter(Boolean);
 }
 
-export default function ProfileEditor({ onSaved }) {
-  const [open, setOpen] = useState(false);
+export default function ProfileEditor({
+  onSaved,
+  initiallyOpen = false,
+}) {
+  const [open, setOpen] = useState(initiallyOpen);
   const [form, setForm] = useState(null);
-  const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
-  async function openEditor() {
+  function openEditor() {
     setOpen(true);
     setMessage("");
     setError("");
-
-    if (form) return;
-
-    setLoading(true);
-
-    try {
-      const response = await apiFetch("/api/profile");
-      const data = await readJson(response);
-
-      if (!response.ok) {
-        throw new Error(
-          errorMessage(data, "Could not load profile.")
-        );
-      }
-
-      setForm(toForm(data));
-    } catch (err) {
-      setError(err.message || "Could not load profile.");
-    } finally {
-      setLoading(false);
-    }
   }
+
+  // Load once when the editor opens, including the first-run auto-open.
+  useEffect(() => {
+    if (!open || form) return undefined;
+
+    let active = true;
+
+    apiFetch("/api/profile")
+      .then(async (response) => ({
+        ok: response.ok,
+        data: await readJson(response),
+      }))
+      .then(({ ok, data }) => {
+        if (!active) return;
+
+        if (!ok) {
+          setError(
+            errorMessage(data, "Could not load profile.")
+          );
+          return;
+        }
+
+        setForm(toForm(data));
+      })
+      .catch(() => {
+        if (active) setError("Could not load profile.");
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [open, form]);
 
   function updateField(field, value) {
     setForm((current) => ({
@@ -136,12 +149,21 @@ export default function ProfileEditor({ onSaved }) {
   }
 
   return (
-    <section className="profile-editor-section">
+    <section
+      className="profile-editor-section"
+      id="profile-settings"
+    >
       <div className="profile-editor-heading">
         <div>
           <div className="section-kicker">PERSONALIZATION</div>
-          <h2>Profile settings</h2>
-          <p>Help the agent discover opportunities that suit you.</p>
+          <h2>
+            {initiallyOpen ? "Set up your profile" : "Profile settings"}
+          </h2>
+          <p>
+            {initiallyOpen
+              ? "Tell us what you study and what you are interested in so recommendations are relevant."
+              : "Help the agent discover opportunities that suit you."}
+          </p>
         </div>
 
         <button
@@ -172,7 +194,7 @@ export default function ProfileEditor({ onSaved }) {
 
       {open && (
         <div className="profile-editor-card">
-          {loading || !form ? (
+          {!form ? (
             <p>Loading your profile...</p>
           ) : (
             <form onSubmit={saveProfile}>

@@ -2098,3 +2098,23 @@
   line-height: 1.7;
   overflow-wrap: anywhere;
 }
+
+.opportunities-section {
+  scroll-margin-top: 20px;
+}
+
+.workspace-hint {
+  max-width: 620px;
+  margin: 9px 0 0;
+  padding: 9px 11px;
+  border: 1px solid #e6e1fa;
+  border-radius: 8px;
+  background: #faf9ff;
+  color: #6d6388;
+  font-size: 10.5px;
+  line-height: 1.65;
+}
+
+.workspace-hint strong {
+  color: #5c45c7;
+}

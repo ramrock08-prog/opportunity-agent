@@ -56,9 +56,11 @@ email digest, and GitHub Actions ideas are preserved and generalized.
 - Saved opportunities view with a live count.
 - Opportunity detail drawer with eligibility, skills, stipend, evidence,
   source/application links, and a manual link check.
+- First-run profile onboarding for new accounts.
 - Profile editor for degree, branch, year, skills, interests, locations,
   remote preference, and categories.
 - Loading, empty, error, and backend-offline states.
+- "Explore opportunities" smoothly scrolls to the results workspace.
 
 ### Accounts and security
 - Optional JWT authentication (`AUTH_REQUIRED=1`).

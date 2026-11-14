@@ -407,6 +407,15 @@ function App() {
     opportunities.map((item) => item.type)
   ).size;
 
+  const profileIncomplete = Boolean(
+    !loading &&
+      profile &&
+      !profile.degree &&
+      !profile.branch &&
+      !profile.year_of_study &&
+      !(profile.interests || []).length
+  );
+
   if (authLoading) {
     return (
       <div className="auth-loading">
@@ -584,6 +593,12 @@ function App() {
                 setActiveView("discover");
                 setActiveCategory("all");
                 setSearchText("");
+                document
+                  .getElementById("opportunities")
+                  ?.scrollIntoView({
+                    behavior: "smooth",
+                    block: "start",
+                  });
               }}
             >
               Explore opportunities <span>→</span>
@@ -604,6 +619,8 @@ function App() {
         </section>
 
         <ProfileEditor
+          key={profileIncomplete ? "onboarding" : "profile"}
+          initiallyOpen={profileIncomplete}
           onSaved={() => setReloadKey((value) => value + 1)}
         />
 
@@ -646,7 +663,10 @@ function App() {
           </div>
         </section>
 
-        <section className="opportunities-section">
+        <section
+          className="opportunities-section"
+          id="opportunities"
+        >
           <div className="section-heading">
             <div>
               <div className="section-kicker">YOUR WORKSPACE</div>
@@ -666,6 +686,15 @@ function App() {
                     ? "Your bookmarked opportunities, saved for later."
                     : "Search and filter the opportunities in your workspace."}
               </p>
+
+              {activeView === "discover" &&
+                opportunities.length <= 4 && (
+                  <p className="workspace-hint">
+                    This workspace has only the seeded records so far.
+                    Use <strong>Find New Opportunities</strong> to search
+                    another category.
+                  </p>
+                )}
             </div>
 
             <div className="section-actions">

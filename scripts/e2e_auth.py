@@ -67,14 +67,19 @@ def main() -> int:
         expect(page.get_by_role("heading", name="Explore opportunities")).to_be_visible()
         print("Registration and email verification sign the user in.")
 
-        page.get_by_role("button", name="Edit profile").click()
+        # New accounts should be prompted to complete their profile.
+        expect(
+            page.get_by_role("heading", name="Set up your profile")
+        ).to_be_visible(timeout=10_000)
         page.get_by_label("Degree").fill("B.Tech")
         page.get_by_label("Branch").fill("ECE")
         page.get_by_role("button", name="Save profile").click()
-        expect(page.locator(".profile-message")).to_contain_text(
-            "Profile saved", timeout=10_000
-        )
-        print("Profile saves with an authenticated request.")
+
+        # The editor closes and the profile is now populated.
+        expect(
+            page.get_by_role("button", name="Edit profile")
+        ).to_be_visible(timeout=10_000)
+        print("New-account profile onboarding saves successfully.")
 
         page.locator(".account-box button", has_text="Sign out").click()
         expect(page.locator(".auth-card")).to_be_visible(timeout=10_000)
