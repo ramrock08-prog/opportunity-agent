@@ -134,6 +134,25 @@ def score_opportunity(
         if opportunity.remote:
             reasons.append("Remote work is available.")
 
+    # 5. Extraction confidence: up to 10 points. This reflects how
+    # confident the extractor was, not whether the listing is genuine
+    # or currently open.
+    confidence = max(0.0, min(1.0, opportunity.confidence))
+    confidence_points = 10.0 * confidence
+
+    earned += confidence_points
+    possible += 10.0
+    components["confidence"] = round(confidence_points, 2)
+
+    if confidence >= 0.8:
+        reasons.append(
+            "High extraction confidence (not independent verification)."
+        )
+    elif confidence < 0.65:
+        reasons.append(
+            "Lower extraction confidence; verify the source carefully."
+        )
+
     final_score = round(100 * earned / possible)
 
     return {

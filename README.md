@@ -12,6 +12,15 @@ This project grew out of the original
 drone-hackathon scout. The original search, AI filtering, link checking,
 email digest, and GitHub Actions ideas are preserved and generalized.
 
+![Opportunity Agent dashboard](docs/screenshots/dashboard.png)
+
+<details>
+<summary>Opportunity detail drawer</summary>
+
+![Opportunity detail drawer](docs/screenshots/opportunity-detail.png)
+
+</details>
+
 > **Data-quality principle:** this app does not claim an opportunity is
 > "verified open". Link checks prove only that a page responded. Deadline,
 > eligibility, and open/closed status must be confirmed on the official
@@ -348,6 +357,7 @@ Relevance scoring is deliberately transparent:
 | Skill matches | 20 |
 | Location match | 15 |
 | Remote preference | 10 |
+| Extraction confidence | 10 |
 
 The final score is normalized to 0–100. It is a **relevance estimate**,
 not an eligibility decision.
@@ -392,8 +402,9 @@ These are documented intentionally rather than hidden.
 - **Phase E — Accounts:** optional JWT auth with per-user isolation.
 - **Phase F — Deployment:** Docker, Render blueprint, documentation;
   an actual public deployment still needs your hosting account and keys.
-- **Phase G — Interview readiness:** architecture, tests, and trade-offs
-  documented here and in `docs/`.
+- **Phase G — Interview readiness:** see
+  [`docs/INTERVIEW.md`](docs/INTERVIEW.md) for a demo script, likely
+  questions, and a code tour.
 
 ---
 

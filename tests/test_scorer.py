@@ -37,9 +37,15 @@ def test_relevant_opportunity_scores_higher():
         confidence=0.9,
     )
 
-    assert score_opportunity(
-        relevant, profile
-    )["score"] > score_opportunity(unrelated, profile)["score"]
+    relevant_result = score_opportunity(relevant, profile)
+    unrelated_result = score_opportunity(unrelated, profile)
+
+    assert relevant_result["score"] > unrelated_result["score"]
+    assert relevant_result["components"]["confidence"] == 9.0
+    assert any(
+        "extraction confidence" in reason.lower()
+        for reason in relevant_result["reasons"]
+    )
 
 
 def test_unselected_type_returns_zero():
