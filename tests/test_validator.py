@@ -55,6 +55,17 @@ def test_low_confidence_is_rejected():
     assert any("Confidence" in problem for problem in problems)
 
 
+def test_training_listing_is_rejected():
+    is_valid, problems = validate_opportunity(
+        make_opportunity(
+            title="Online Internship on CPP Programming Training Program"
+        )
+    )
+
+    assert not is_valid
+    assert any("training/course" in p for p in problems)
+
+
 def test_invalid_urls_and_dates_are_rejected():
     is_valid, problems = validate_opportunity(
         make_opportunity(

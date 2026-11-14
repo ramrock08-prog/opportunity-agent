@@ -98,6 +98,9 @@ LOW_QUALITY_HOSTS = {
     "extern.com",
     "prosple.com",
     "mhcognition.com",
+    "internshipwala.com",
+    "nareshit.com",
+    "pmaccelerator.io",
 }
 
 

@@ -3,6 +3,15 @@ from urllib.parse import urlparse
 
 from opportunity import ALLOWED_TYPES, Opportunity
 
+TRAINING_LISTING_TERMS = {
+    "training program",
+    "training course",
+    "online internship on",
+    "bootcamp",
+    "certification course",
+    "course with certificate",
+}
+
 SOCIAL_MEDIA_HOSTS = {
     "instagram.com",
     "facebook.com",
@@ -70,6 +79,15 @@ def validate_opportunity(
 
     if opportunity.type not in ALLOWED_TYPES:
         problems.append("Unsupported opportunity type")
+
+    title_lower = opportunity.title.casefold()
+
+    if opportunity.type in {"internship", "job"} and any(
+        term in title_lower for term in TRAINING_LISTING_TERMS
+    ):
+        problems.append(
+            "Title looks like a training/course listing, not a job"
+        )
 
     if not valid_http_url(opportunity.source_url):
         problems.append("Invalid source URL")

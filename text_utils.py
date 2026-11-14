@@ -19,6 +19,9 @@ def clean_text(value: str | None) -> str:
 
     text = value.replace("\u00a0", " ").replace("\u200b", "")
     text = _POSSESSIVE_ARTIFACT.sub("'s", text)
+    text = re.sub(r"\ufffd\?{1,2}", "\u2014", text)
+    text = re.sub(r"\ufffd{2,3}", "\u2014", text)
+    text = text.replace("\ufffd", "")
     return _WHITESPACE.sub(" ", text).strip()
 
 
