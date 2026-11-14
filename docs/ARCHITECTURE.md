@@ -12,6 +12,7 @@ FastAPI (api.py)
    |-- profile service (profile.py) ---------------> user_profiles
    |-- bookmark service (bookmarks.py) ------------> user_bookmarks
    |-- opportunity service (storage.py) -----------> opportunities
+   |-- resume import (resume.py + ai.py) ----------> profile preview
    |-- recommendation engine (scorer.py)
    |-- rate limiter (rate_limit.py) ---------------> rate_limits
    |-- discovery lock (locks.py) -------------------> discovery_locks
@@ -58,6 +59,15 @@ search.py (Tavily) -> ai.py (Gemini) -> validator.py -> dedup.py
    marks the account verified and creates a revocable session.
 7. Without SMTP, `AUTH_DEV_SHOW_TOKENS=1` exposes the token only for
    local development. It must remain disabled publicly.
+
+### Profile onboarding and resume import
+
+1. A new account is prompted to complete its profile automatically.
+2. The student can type details or upload PDF/DOCX/TXT (5 MB limit).
+3. `resume.py` extracts text in memory; the file is never persisted.
+4. Gemini maps only explicit resume facts into profile fields.
+5. The frontend pre-fills the editable form; the student reviews and saves.
+6. The first successful profile save starts internship/job discovery.
 
 ### Login, lockout, and logout
 

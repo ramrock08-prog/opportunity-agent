@@ -2118,3 +2118,101 @@
 .workspace-hint strong {
   color: #5c45c7;
 }
+
+/* --- Resume import --- */
+
+.resume-import {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 16px;
+  padding: 13px 14px;
+  border: 1px dashed #cfc6f8;
+  border-radius: 10px;
+  background: #faf9ff;
+}
+
+.resume-import strong {
+  display: block;
+  color: #4d3d9f;
+  font-size: 11.5px;
+}
+
+.resume-import span {
+  display: block;
+  margin-top: 3px;
+  color: #8a83a3;
+  font-size: 10px;
+  line-height: 1.6;
+}
+
+.resume-upload {
+  flex-shrink: 0;
+  padding: 9px 12px;
+  border: 1px solid #d8d0fa;
+  border-radius: 8px;
+  background: #fff;
+  color: #5d47c8;
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 800;
+  transition: 160ms ease;
+}
+
+.resume-upload:hover {
+  background: #f3efff;
+}
+
+.resume-upload.busy {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.resume-upload input {
+  display: none;
+}
+
+.resume-message {
+  margin-bottom: 13px;
+  padding: 10px 12px;
+  border: 1px solid #ccebdc;
+  border-radius: 8px;
+  background: #f0fbf5;
+  color: #267a59;
+  font-size: 10.5px;
+  line-height: 1.6;
+}
+
+@media (max-width: 650px) {
+  .resume-import {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+.auto-discovery-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: -12px 0 22px;
+  padding: 12px 14px;
+  border: 1px solid #dcd6fb;
+  border-radius: 10px;
+  background: #f7f5ff;
+  color: #5d4ab9;
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.auto-discovery-banner.active {
+  border-color: #c9bff7;
+  background: #f2efff;
+}
+
+.auto-discovery-banner .loading-spinner.small {
+  width: 15px;
+  height: 15px;
+  border-width: 2px;
+  flex-shrink: 0;
+}

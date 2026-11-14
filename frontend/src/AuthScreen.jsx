@@ -3,6 +3,8 @@ import { useEffect, useMemo, useState } from "react";
 import {
   apiFetch,
   errorMessage,
+  hasKnownAccount,
+  markKnownAccount,
   readJson,
   setAuthToken,
 } from "./api";
@@ -26,9 +28,12 @@ export default function AuthScreen({
   onAuthenticated,
 }) {
   const initial = useMemo(() => initialUrlState(), []);
-  const [mode, setMode] = useState(
-    initial.resetToken ? "reset" : "login"
-  );
+  const [mode, setMode] = useState(() => {
+    if (initial.resetToken) return "reset";
+    if (initial.verifyToken) return "login";
+
+    return hasKnownAccount() ? "login" : "register";
+  });
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
@@ -93,6 +98,7 @@ export default function AuthScreen({
   }, [initial.verifyToken, onAuthenticated]);
 
   function finishAuthentication(data) {
+    markKnownAccount();
     setAuthToken(data.token);
     onAuthenticated(data.user);
   }
@@ -153,6 +159,7 @@ export default function AuthScreen({
           );
         }
 
+        markKnownAccount();
         setPassword("");
         setResetToken("");
         setMode("login");
@@ -199,6 +206,7 @@ export default function AuthScreen({
       }
 
       if (data.verification_required) {
+        markKnownAccount();
         setVerificationEmail(data.email || email);
         setDevVerifyToken(data.dev_verification_token || "");
         setMode("verify");

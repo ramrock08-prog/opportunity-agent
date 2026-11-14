@@ -47,6 +47,10 @@ function App() {
   // Discovery state
   const [discovering, setDiscovering] = useState(false);
   const [discoveryMessage, setDiscoveryMessage] = useState("");
+  const [autoDiscovery, setAutoDiscovery] = useState({
+    active: false,
+    message: "",
+  });
 
   // Authentication state
   const [authStatus, setAuthStatus] = useState(null);
@@ -280,6 +284,61 @@ function App() {
   function retryConnection() {
     setAuthReloadKey((value) => value + 1);
     setReloadKey((value) => value + 1);
+  }
+
+  async function startOnboardingDiscovery() {
+    const preferred = (profile?.opportunity_types || []).filter(
+      (type) => type === "internship" || type === "job"
+    );
+    const categories = (
+      preferred.length ? preferred : ["internship", "job"]
+    ).slice(0, 2);
+
+    let lastCount = null;
+
+    for (const category of categories) {
+      setAutoDiscovery({
+        active: true,
+        message: `Searching ${category} opportunities...`,
+      });
+
+      try {
+        const response = await apiFetch("/api/discover", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ category, limit: 2 }),
+        });
+        const data = await readJson(response);
+
+        if (!response.ok) {
+          throw new Error(
+            errorMessage(data, `The ${category} search failed.`)
+          );
+        }
+
+        lastCount = data.count;
+        setReloadKey((value) => value + 1);
+      } catch {
+        // Continue with the next category; the manual button remains.
+      }
+    }
+
+    setAutoDiscovery({
+      active: false,
+      message:
+        lastCount === null
+          ? "Automatic search could not run. Use Find New Opportunities to try again."
+          : `Search complete. ${lastCount} opportunities are now available.`,
+    });
+  }
+
+  function handleProfileSaved() {
+    const shouldAutoDiscover = profileIncomplete;
+    setReloadKey((value) => value + 1);
+
+    if (shouldAutoDiscover) {
+      startOnboardingDiscovery();
+    }
   }
 
   async function handleLogout() {
@@ -621,7 +680,7 @@ function App() {
         <ProfileEditor
           key={profileIncomplete ? "onboarding" : "profile"}
           initiallyOpen={profileIncomplete}
-          onSaved={() => setReloadKey((value) => value + 1)}
+          onSaved={handleProfileSaved}
         />
 
         {error && (
@@ -629,6 +688,20 @@ function App() {
             <strong>Connection problem</strong>
             <span>{error}</span>
             <button onClick={retryConnection}>Retry</button>
+          </div>
+        )}
+
+        {autoDiscovery.message && (
+          <div
+            className={`auto-discovery-banner ${
+              autoDiscovery.active ? "active" : ""
+            }`}
+            role="status"
+          >
+            {autoDiscovery.active && (
+              <span className="loading-spinner small" />
+            )}
+            <span>{autoDiscovery.message}</span>
           </div>
         )}
 

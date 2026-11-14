@@ -57,6 +57,8 @@ email digest, and GitHub Actions ideas are preserved and generalized.
 - Opportunity detail drawer with eligibility, skills, stipend, evidence,
   source/application links, and a manual link check.
 - First-run profile onboarding for new accounts.
+- Resume/CV upload (PDF, DOCX, TXT) auto-fills the profile with Gemini.
+- Automatic internship/job discovery after the first profile save.
 - Profile editor for degree, branch, year, skills, interests, locations,
   remote preference, and categories.
 - Loading, empty, error, and backend-offline states.
@@ -83,7 +85,7 @@ email digest, and GitHub Actions ideas are preserved and generalized.
 - Verification and reset emails through Gmail SMTP.
 - GitHub Actions scheduled discovery with JSON snapshot persistence.
 - Docker multi-stage build; Render blueprint included.
-- 69 SQLite tests + 4 PostgreSQL integration tests, plus two Playwright
+- 76 SQLite tests + 4 PostgreSQL integration tests, plus two Playwright
   browser flows.
 
 ---
@@ -269,6 +271,7 @@ malformed rows do not silently accumulate.
 | GET | `/api/recommendations` | User | Ranked for current profile |
 | GET | `/api/profile` | User | Current profile |
 | PUT | `/api/profile` | User | Update current profile |
+| POST | `/api/profile/import-resume` | User | Parse PDF/DOCX/TXT into a profile |
 | POST | `/api/discover` | User | Run limited discovery |
 | GET | `/api/bookmarks` | User | Current user's bookmarks |
 | POST | `/api/bookmarks` | User | Save a bookmark |
@@ -287,9 +290,9 @@ when authentication is enabled.
 .\.venv\Scripts\python.exe -m pytest
 ```
 
-Current result: **69 passed, 3 skipped** with SQLite (PostgreSQL tests
+Current result: **76 passed, 4 skipped** with SQLite (PostgreSQL tests
 are skipped unless a database is configured). With the local PostgreSQL
-server enabled: **73 passed**.
+server enabled: **80 passed**.
 
 ```powershell
 # Starts a temporary PostgreSQL server with pgserver and runs the 3
@@ -362,7 +365,8 @@ opportunity-agent/
 ├── profile.py              Per-user profile model + repository
 ├── opportunity.py          Opportunity dataclass
 ├── search.py               Tavily queries and search
-├── ai.py                   Gemini extraction prompt + parsing
+├── ai.py                   Gemini extraction + resume profile parsing
+resume.py               PDF/DOCX/TXT resume text extraction
 ├── validator.py            Rule-based data validation
 ├── dedup.py                URL/title deduplication
 ├── verification.py         Honest on-demand link checks (SSRF-aware)
@@ -371,7 +375,7 @@ opportunity-agent/
 ├── run_agent.py            Discovery pipeline CLI
 ├── notify.py               HTML email digest
 ├── agent.py                Legacy original drone scout (kept for history)
-├── tests/                  69 SQLite tests + 4 PostgreSQL tests
+├── tests/                  76 SQLite tests + 4 PostgreSQL tests
 ├── scripts/
 │   ├── e2e_bookmarks.py    Playwright bookmark/details flow
 │   ├── e2e_auth.py         Playwright auth flow

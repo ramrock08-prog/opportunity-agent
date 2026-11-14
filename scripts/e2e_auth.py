@@ -11,6 +11,7 @@ and a Vite server on port 5174 with
 VITE_API_BASE=http://127.0.0.1:8001.
 """
 
+import json
 import time
 import urllib.request
 
@@ -22,8 +23,6 @@ HEALTH_URL = "http://127.0.0.1:8001/api/health"
 
 def main() -> int:
     with urllib.request.urlopen(HEALTH_URL) as response:
-        import json
-
         health = json.loads(response.read().decode("utf-8"))
 
     assert health["auth"] == "required", health
@@ -43,6 +42,49 @@ def main() -> int:
             lambda message: console_errors.append(message.text)
             if message.type == "error"
             else None,
+        )
+
+        # Mock resume extraction so the browser test does not spend Gemini
+        # credits; the real extractor is tested separately.
+        page.route(
+            "**/api/profile/import-resume",
+            lambda route: route.fulfill(
+                status=200,
+                content_type="application/json",
+                body=json.dumps({
+                    "status": "parsed",
+                    "filename": "resume.txt",
+                    "characters": 120,
+                    "profile": {
+                        "name": "E2E Student",
+                        "degree": "B.Tech",
+                        "branch": "ECE",
+                        "year_of_study": 3,
+                        "skills": ["Python", "React"],
+                        "interests": ["AI", "Software Engineering"],
+                        "preferred_locations": ["India"],
+                        "remote_preferred": True,
+                        "opportunity_types": [
+                            "internship",
+                            "job",
+                        ],
+                    },
+                }),
+            ),
+        )
+
+        # Avoid spending Tavily/Gemini credits while testing onboarding.
+        page.route(
+            "**/api/discover",
+            lambda route: route.fulfill(
+                status=200,
+                content_type="application/json",
+                body=json.dumps({
+                    "status": "completed",
+                    "count": 7,
+                    "opportunities": [],
+                }),
+            ),
         )
 
         page.goto(APP_URL, wait_until="networkidle")
@@ -71,15 +113,31 @@ def main() -> int:
         expect(
             page.get_by_role("heading", name="Set up your profile")
         ).to_be_visible(timeout=10_000)
-        page.get_by_label("Degree").fill("B.Tech")
-        page.get_by_label("Branch").fill("ECE")
+
+        page.locator("input[type=file]").set_input_files({
+            "name": "resume.txt",
+            "mimeType": "text/plain",
+            "buffer": (
+                b"E2E Student. B.Tech ECE. Skills: Python, React."
+            ),
+        })
+        expect(page.get_by_label("Degree")).to_have_value("B.Tech")
+        expect(
+            page.locator(".resume-message")
+        ).to_contain_text("Imported resume.txt")
+
         page.get_by_role("button", name="Save profile").click()
 
         # The editor closes and the profile is now populated.
         expect(
             page.get_by_role("button", name="Edit profile")
         ).to_be_visible(timeout=10_000)
-        print("New-account profile onboarding saves successfully.")
+        expect(
+            page.locator(".auto-discovery-banner")
+        ).to_contain_text("Search complete", timeout=15_000)
+        print(
+            "New-account profile onboarding saves and starts discovery."
+        )
 
         page.locator(".account-box button", has_text="Sign out").click()
         expect(page.locator(".auth-card")).to_be_visible(timeout=10_000)

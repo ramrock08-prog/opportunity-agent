@@ -42,6 +42,9 @@ export default function ProfileEditor({
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [resumeBusy, setResumeBusy] = useState(false);
+  const [resumeMessage, setResumeMessage] = useState("");
+  const [resumeError, setResumeError] = useState("");
 
   function openEditor() {
     setOpen(true);
@@ -80,6 +83,50 @@ export default function ProfileEditor({
       active = false;
     };
   }, [open, form]);
+
+  async function handleResumeFile(event) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      setResumeError("Choose a resume smaller than 5 MB.");
+      return;
+    }
+
+    setResumeBusy(true);
+    setResumeError("");
+    setResumeMessage("");
+
+    try {
+      const body = new FormData();
+      body.append("file", file);
+
+      const response = await apiFetch(
+        "/api/profile/import-resume",
+        { method: "POST", body }
+      );
+      const data = await readJson(response);
+
+      if (!response.ok) {
+        throw new Error(
+          errorMessage(data, "Could not read the resume.")
+        );
+      }
+
+      setForm(toForm(data.profile));
+      setResumeMessage(
+        `Imported ${data.filename}. Review the fields below, then save your profile.`
+      );
+    } catch (err) {
+      setResumeError(
+        err.message || "Could not read the resume."
+      );
+    } finally {
+      setResumeBusy(false);
+    }
+  }
 
   function updateField(field, value) {
     setForm((current) => ({
@@ -194,6 +241,40 @@ export default function ProfileEditor({
 
       {open && (
         <div className="profile-editor-card">
+          <div className="resume-import">
+            <div>
+              <strong>Import your resume or CV</strong>
+              <span>
+                PDF, DOCX, or TXT up to 5 MB. AI fills the fields;
+                review them before saving.
+              </span>
+            </div>
+
+            <label
+              className={`resume-upload ${resumeBusy ? "busy" : ""}`}
+            >
+              {resumeBusy ? "Reading resume..." : "Upload resume"}
+              <input
+                type="file"
+                accept=".pdf,.docx,.txt"
+                onChange={handleResumeFile}
+                disabled={resumeBusy}
+              />
+            </label>
+          </div>
+
+          {resumeMessage && (
+            <div className="resume-message" role="status">
+              {resumeMessage}
+            </div>
+          )}
+
+          {resumeError && (
+            <div className="profile-error" role="alert">
+              {resumeError}
+            </div>
+          )}
+
           {!form ? (
             <p>Loading your profile...</p>
           ) : (

@@ -1,12 +1,20 @@
 ﻿from pathlib import Path
 from profile import UserProfile, load_profile, save_profile
 
-from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi import (
+    Depends,
+    FastAPI,
+    File,
+    HTTPException,
+    Request,
+    UploadFile,
+)
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
+from ai import extract_profile_from_resume
 from auth import (
     EmailNotVerifiedError,
     auth_configuration_warning,
@@ -40,6 +48,7 @@ from locks import acquire_lock, release_lock
 from mailer import email_configured
 from opportunity import ALLOWED_TYPES
 from rate_limit import enforce as enforce_rate_limit
+from resume import MAX_UPLOAD_BYTES, extract_resume_text
 from run_agent import run_agent as execute_discovery
 from scorer import rank_opportunities
 from search import SEARCH_QUERIES
@@ -605,6 +614,83 @@ def update_profile(
         ) from error
 
 
+@app.post("/api/profile/import-resume")
+async def import_resume(
+    http_request: Request,
+    file: UploadFile = File(...),
+    user: dict = Depends(current_user),
+):
+    """Parse a resume and return a pre-filled, unsaved profile."""
+    enforce_rate_limit(
+        http_request, "resume_import", 5, 3600, user_id=user["id"]
+    )
+
+    data = await file.read(MAX_UPLOAD_BYTES + 1)
+
+    if len(data) > MAX_UPLOAD_BYTES:
+        raise HTTPException(
+            status_code=413,
+            detail="The resume is larger than the 5 MB limit.",
+        )
+
+    try:
+        text = extract_resume_text(
+            file.filename or "resume", data
+        )
+    except ValueError as error:
+        raise HTTPException(
+            status_code=422,
+            detail=str(error),
+        ) from error
+
+    try:
+        extracted = extract_profile_from_resume(text)
+    except ValueError as error:
+        raise HTTPException(
+            status_code=422,
+            detail=str(error),
+        ) from error
+    except RuntimeError as error:
+        message = str(error)
+
+        if "GEMINI_API_KEY" in message:
+            raise HTTPException(
+                status_code=503,
+                detail=(
+                    "AI resume extraction is not configured. "
+                    "Fill the profile manually or ask the operator "
+                    "to set GEMINI_API_KEY."
+                ),
+            ) from error
+
+        raise HTTPException(
+            status_code=502,
+            detail=message,
+        ) from error
+
+    current = load_profile(user["id"]).to_dict()
+    merged = dict(current)
+
+    for key, value in extracted.items():
+        if value is not None and value != "" and value != []:
+            merged[key] = value
+
+    try:
+        profile = UserProfile(**merged)
+    except (TypeError, ValueError) as error:
+        raise HTTPException(
+            status_code=422,
+            detail="The resume information could not be validated.",
+        ) from error
+
+    return {
+        "status": "parsed",
+        "filename": Path(file.filename or "resume").name,
+        "characters": len(text),
+        "profile": profile.to_dict(),
+    }
+
+
 @app.post("/api/discover")
 def discover(
     request: DiscoveryRequest,
@@ -751,10 +837,15 @@ def get_recommendations(user: dict = Depends(current_user)):
     return {
         "count": len(ranked),
         "profile": {
+            "name": profile.name,
             "degree": profile.degree,
             "branch": profile.branch,
             "year_of_study": profile.year_of_study,
+            "skills": profile.skills,
             "interests": profile.interests,
+            "preferred_locations": profile.preferred_locations,
+            "remote_preferred": profile.remote_preferred,
+            "opportunity_types": profile.opportunity_types,
         },
         "recommendations": [
             {

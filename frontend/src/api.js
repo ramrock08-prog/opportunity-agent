@@ -2,6 +2,7 @@
 // and the production build is served by FastAPI itself.
 const configuredBase = import.meta.env.VITE_API_BASE || "";
 const TOKEN_KEY = "opportunity_agent_token";
+const ACCOUNT_KEY = "opportunity_agent_known_account";
 
 export const API_BASE = configuredBase.replace(/\/+$/, "");
 
@@ -37,6 +38,22 @@ export function setAuthToken(token) {
 
 export function clearAuthToken() {
   setAuthToken("");
+}
+
+export function hasKnownAccount() {
+  try {
+    return window.localStorage.getItem(ACCOUNT_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+export function markKnownAccount() {
+  try {
+    window.localStorage.setItem(ACCOUNT_KEY, "1");
+  } catch {
+    // Ignore storage restrictions; this only affects the default tab.
+  }
 }
 
 export function apiFetch(path, options = {}) {

@@ -23,7 +23,7 @@ software engineering or AI/ML placement interview.
 5. **Profile** — change a skill or interest, save, and show the
    recommendation score/reasons changing.
 6. **API docs** — open `/docs`, mention validation and auth dependencies.
-7. **Tests** — run `pytest`, mention 73 tests and the Playwright flows.
+7. **Tests** — run `pytest`, mention 80 tests and the Playwright flows.
 8. **Architecture** — open `docs/ARCHITECTURE.md`; discuss trust
    boundaries and SQLite trade-offs.
 
@@ -136,6 +136,7 @@ contains. The product communicates this uncertainty instead of hiding it.
 | Opportunity repository | `storage.py` |
 | Per-user bookmarks/profile | `bookmarks.py`, `profile.py` |
 | Gemini prompt and parsing | `ai.py` |
+| Resume text extraction | `resume.py` |
 | Validation rules | `validator.py` |
 | Link checks / SSRF guard | `verification.py` |
 | Ranking | `scorer.py` |
@@ -145,7 +146,7 @@ contains. The product communicates this uncertainty instead of hiding it.
 
 ## Metrics to quote accurately
 
-- 73 automated tests: 69 SQLite + 4 PostgreSQL integration tests.
+- 80 automated tests: 76 SQLite + 4 PostgreSQL integration tests.
 - 2 Playwright browser flows (bookmarks/detail, verification/reset/profile).
 - 7 opportunity categories.
 - 6 scoring components with transparent reasons.
