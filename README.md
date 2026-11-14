@@ -65,7 +65,7 @@ email digest, and GitHub Actions ideas are preserved and generalized.
 - HTML email digest (`notify.py --preview` / `--send`).
 - GitHub Actions scheduled discovery with JSON snapshot persistence.
 - Docker multi-stage build; Render blueprint included.
-- 54 automated backend/API tests plus two Playwright browser flows.
+- 55 automated backend/API tests plus two Playwright browser flows.
 
 ---
 
@@ -241,7 +241,7 @@ when authentication is enabled.
 .\.venv\Scripts\python.exe -m pytest
 ```
 
-Current result: **54 passed** (API tests use disposable temp databases).
+Current result: **55 passed** (API tests use disposable temp databases).
 
 ### Browser tests
 
@@ -315,7 +315,7 @@ opportunity-agent/
 ├── run_agent.py            Discovery pipeline CLI
 ├── notify.py               HTML email digest
 ├── agent.py                Legacy original drone scout (kept for history)
-├── tests/                  Pytest suite (54 tests)
+├── tests/                  Pytest suite (55 tests)
 ├── scripts/
 │   ├── e2e_bookmarks.py    Playwright bookmark/details flow
 │   ├── e2e_auth.py         Playwright auth flow

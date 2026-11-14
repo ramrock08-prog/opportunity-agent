@@ -434,7 +434,10 @@ def discover(
 
 
 @app.post("/api/opportunities/verify")
-def verify_stored_opportunity(request: VerifyRequest):
+def verify_stored_opportunity(
+    request: VerifyRequest,
+    user: dict = Depends(current_user),
+):
     """Check links for a stored opportunity, on demand.
 
     Only URLs already present in storage are fetched. Accepting

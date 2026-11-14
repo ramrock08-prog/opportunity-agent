@@ -58,7 +58,7 @@ def _is_public_hostname(host: str) -> bool:
 
     try:
         addresses = socket.getaddrinfo(host, None)
-    except socket.gaierror:
+    except (OSError, UnicodeError):
         return False
 
     for address in addresses:

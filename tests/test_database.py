@@ -1,6 +1,8 @@
 import json
+import sqlite3
 from profile import UserProfile, load_profile, save_profile
 
+import database
 from bookmarks import add_bookmark, load_bookmarks, remove_bookmark
 from opportunity import Opportunity
 from storage import (
@@ -80,6 +82,37 @@ def test_bookmarks_round_trip(isolated_db):
     assert add_bookmark(url) == [url]
     assert load_bookmarks() == [url]
     assert remove_bookmark(url) == []
+    assert load_bookmarks() == []
+
+
+def test_legacy_bookmarks_are_not_reimported_after_removal(
+    isolated_db,
+):
+    # Initialize the schema (one-time migration flag is written).
+    assert load_bookmarks() == []
+
+    # Simulate a leftover v1 bookmark table arriving after migration.
+    with sqlite3.connect(isolated_db) as connection:
+        connection.execute(
+            """
+            CREATE TABLE bookmarks(
+                url TEXT PRIMARY KEY,
+                created_at TEXT NOT NULL
+            )
+            """
+        )
+        connection.execute(
+            """
+            INSERT INTO bookmarks(url, created_at)
+            VALUES('https://example.com/legacy', 'now')
+            """
+        )
+
+    # Force the schema hook to run again, as it would on a restart.
+    database._initialized_paths.discard(
+        str(isolated_db.resolve())
+    )
+
     assert load_bookmarks() == []
 
 

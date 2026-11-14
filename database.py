@@ -109,17 +109,6 @@ def _ensure_schema(path: Path) -> None:
             CREATE INDEX IF NOT EXISTS idx_opportunities_type
                 ON opportunities(type);
 
-            CREATE TABLE IF NOT EXISTS bookmarks (
-                url TEXT PRIMARY KEY,
-                created_at TEXT NOT NULL
-            );
-
-            CREATE TABLE IF NOT EXISTS profile (
-                id INTEGER PRIMARY KEY CHECK (id = 1),
-                payload TEXT NOT NULL,
-                updated_at TEXT NOT NULL
-            );
-
             CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 email TEXT NOT NULL UNIQUE,
@@ -161,7 +150,22 @@ def _ensure_schema(path: Path) -> None:
             (DEMO_USER_ID, DEMO_USER_EMAIL, utc_now()),
         )
 
-        _migrate_v1_user_data(connection)
+        v1_user_data_migrated = connection.execute(
+            """
+            SELECT value FROM schema_meta
+            WHERE key = 'v1_user_data_migrated'
+            """
+        ).fetchone()
+
+        if v1_user_data_migrated is None:
+            _migrate_v1_user_data(connection)
+            connection.execute(
+                """
+                INSERT INTO schema_meta(key, value)
+                VALUES('v1_user_data_migrated', '1')
+                ON CONFLICT(key) DO UPDATE SET value = '1'
+                """
+            )
 
         connection.execute(
             """
@@ -363,5 +367,5 @@ def healthcheck() -> bool:
         with get_connection() as connection:
             connection.execute("SELECT 1").fetchone()
         return True
-    except sqlite3.Error:
+    except (sqlite3.Error, OSError):
         return False

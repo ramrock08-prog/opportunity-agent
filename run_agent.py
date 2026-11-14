@@ -1,6 +1,6 @@
 ﻿import argparse
 
-from ai import extract_opportunity
+from ai import extract_opportunity, get_client
 from dedup import deduplicate_opportunities
 from search import SEARCH_QUERIES, search_category
 from storage import load_opportunities, save_opportunities
@@ -16,6 +16,9 @@ def run_agent(category: str, limit: int) -> int:
     print("-" * 55)
 
     try:
+        # Fail before spending a Tavily credit if Gemini is not configured.
+        get_client()
+
         # 1. Search the web.
         results = search_category(
             category,

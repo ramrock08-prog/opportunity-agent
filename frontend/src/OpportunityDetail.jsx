@@ -233,7 +233,11 @@ export default function OpportunityDetail({
           />
 
           <section className="detail-section">
-            <h4>Source evidence</h4>
+            <h4>Extractor-reported evidence</h4>
+            <p className="detail-empty">
+              Snippets below are reported by the extraction model.
+              They are a research aid, not independently verified quotes.
+            </p>
 
             {item.evidence?.length ? (
               <ul className="evidence-list">
