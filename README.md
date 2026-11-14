@@ -1,6 +1,11 @@
 # Opportunity Agent
 
+[![CI](https://github.com/ramrock08-prog/opportunity-agent/actions/workflows/tests.yml/badge.svg)](https://github.com/ramrock08-prog/opportunity-agent/actions/workflows/tests.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+
 **An AI-powered opportunity discovery platform for students.**
+
+Repository: <https://github.com/ramrock08-prog/opportunity-agent>
 
 Opportunity Agent searches the web for internships, hackathons, jobs,
 scholarships, fellowships, competitions, and research programs; extracts
