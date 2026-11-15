@@ -6,6 +6,7 @@ export default function OpportunityCard({
   isBusy,
   applicationStatus,
   onBookmark,
+  onApply,
   onOpen,
 }) {
   const applyUrl = safeHttpUrl(
@@ -88,6 +89,14 @@ export default function OpportunityCard({
         </span>
 
         <div className="card-actions">
+          <button
+            className="apply-button"
+            onClick={() => onApply(item)}
+            aria-label={`Apply to ${item.title}`}
+          >
+            Apply
+          </button>
+
           <button
             className="details-button"
             onClick={() => onOpen(item)}

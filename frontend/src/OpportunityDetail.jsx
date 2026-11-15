@@ -55,6 +55,7 @@ export default function OpportunityDetail({
   related,
   onStatusChange,
   onBookmark,
+  onApply,
   onOpen,
   onClose,
 }) {
@@ -524,6 +525,14 @@ export default function OpportunityDetail({
               onClick={copyLink}
             >
               {copied ? "Link copied" : "Share"}
+            </button>
+
+            <button
+              type="button"
+              className="apply-button"
+              onClick={() => onApply(item)}
+            >
+              Apply
             </button>
           </div>
 

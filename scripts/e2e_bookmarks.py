@@ -198,7 +198,24 @@ def _run_browser_test(original_bookmarks: list[str]) -> int:
         assert target_url not in api_bookmarks(), "DELETE did not remove bookmark."
         print("Removing a bookmark updates storage and the Saved view.")
 
-        # 6. Application tracker from the detail drawer.
+        # 6. Apply flow opens with saved-details fields.
+        page.locator(".side-link", has_text="Discover").click()
+        apply_card = page.locator(
+            ".opportunity-card", has_text=title
+        )
+        apply_card.locator(".apply-button").click()
+        apply_dialog = page.get_by_role("dialog")
+        expect(apply_dialog).to_be_visible(timeout=10_000)
+        expect(apply_dialog.get_by_label("Phone")).to_be_visible()
+        expect(
+            apply_dialog.get_by_label("College")
+        ).to_be_visible()
+        apply_dialog.get_by_role(
+            "button", name="Close apply panel"
+        ).click()
+        print("Apply panel opens with saved-detail fields.")
+
+        # 7. Application tracker from the detail drawer.
         page.locator(".side-link", has_text="Discover").click()
         discover_card = page.locator(
             ".opportunity-card", has_text=title

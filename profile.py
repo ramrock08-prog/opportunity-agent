@@ -34,6 +34,14 @@ class UserProfile:
     branch: str = ""
     year_of_study: int | None = None
 
+    # Contact details used to pre-fill applications.
+    phone: str = ""
+    college: str = ""
+    graduation_year: int | None = None
+    github: str = ""
+    linkedin: str = ""
+    portfolio: str = ""
+
     skills: list[str] = field(default_factory=list)
     interests: list[str] = field(default_factory=list)
 
@@ -56,9 +64,24 @@ class UserProfile:
     )
 
     def __post_init__(self):
-        self.name = self.name.strip()
-        self.degree = self.degree.strip()
-        self.branch = self.branch.strip()
+        self.name = self.name.strip()[:100]
+        self.degree = self.degree.strip()[:100]
+        self.branch = self.branch.strip()[:100]
+        self.phone = self.phone.strip()[:30]
+        self.college = self.college.strip()[:150]
+        self.github = self.github.strip()[:300]
+        self.linkedin = self.linkedin.strip()[:300]
+        self.portfolio = self.portfolio.strip()[:300]
+
+        if self.graduation_year is not None:
+            if (
+                isinstance(self.graduation_year, bool)
+                or not isinstance(self.graduation_year, int)
+                or not 2000 <= self.graduation_year <= 2100
+            ):
+                raise ValueError(
+                    "graduation_year must be between 2000 and 2100."
+                )
 
         if self.year_of_study is not None:
             if (

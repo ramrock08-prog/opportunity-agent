@@ -48,6 +48,7 @@ from config import (
     AUTH_REQUIRED,
     SERVE_FRONTEND,
 )
+from curated import import_curated
 from database import DEMO_USER_EMAIL, DEMO_USER_ID, database_label
 from database import healthcheck as database_healthcheck
 from locks import acquire_lock, release_lock
@@ -74,6 +75,15 @@ class ProfileUpdate(BaseModel):
     branch: str = ""
     year_of_study: int | None = Field(default=None, ge=1, le=8)
 
+    phone: str = Field(default="", max_length=30)
+    college: str = Field(default="", max_length=150)
+    graduation_year: int | None = Field(
+        default=None, ge=2000, le=2100
+    )
+    github: str = Field(default="", max_length=300)
+    linkedin: str = Field(default="", max_length=300)
+    portfolio: str = Field(default="", max_length=300)
+
     skills: list[str] = Field(default_factory=list)
     interests: list[str] = Field(default_factory=list)
 
@@ -99,6 +109,11 @@ class BookmarkRequest(BaseModel):
 
 class VerifyRequest(BaseModel):
     source_url: str
+
+
+class CuratedRequest(BaseModel):
+    country: str = Field(default="India", max_length=60)
+    limit: int = Field(default=200, ge=10, le=500)
 
 
 class ApplicationStatusRequest(BaseModel):
@@ -693,6 +708,41 @@ def update_profile(
             status_code=500,
             detail="Unable to save the user profile.",
         ) from error
+
+
+@app.post("/api/discover/curated")
+def discover_curated(
+    request: CuratedRequest,
+    http_request: Request,
+    user: dict = Depends(current_user),
+):
+    """Import structured internships from open-source datasets.
+
+    This uses no Tavily or Gemini credits; it reads maintained
+    listing datasets with direct apply links.
+    """
+    enforce_rate_limit(
+        http_request, "curated_import", 3, 3600, user_id=user["id"]
+    )
+
+    try:
+        stats = import_curated(
+            profile=load_profile(user["id"]),
+            country=request.country,
+            limit=request.limit,
+        )
+    except RuntimeError as error:
+        raise HTTPException(
+            status_code=502, detail=str(error)
+        ) from error
+
+    opportunities = get_valid_opportunities()
+
+    return {
+        "status": "completed",
+        "stats": stats,
+        "count": len(opportunities),
+    }
 
 
 @app.post("/api/profile/import-resume")

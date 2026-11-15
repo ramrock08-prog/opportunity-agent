@@ -28,9 +28,11 @@ Discovery is a separate pipeline, callable from the CLI or the API:
 
 ```text
 search.py (Tavily) -> ai.py (Gemini) -> validator.py -> dedup.py
-                                          |              |
-                                          v              v
-                                  link/date rules     database upsert
+          |                               |              |
+          |                               v              v
+          |                       link/date rules     database upsert
+          |
+curated.py (open-source internship datasets) -> normalize -> dedup -> database
 ```
 
 ## Main request flows

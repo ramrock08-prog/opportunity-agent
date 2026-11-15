@@ -170,6 +170,27 @@ def test_application_tracker_rejects_bad_status(isolated_db):
     assert response.status_code == 422
 
 
+def test_curated_discovery_endpoint(isolated_db, monkeypatch):
+    monkeypatch.setattr(
+        api,
+        "import_curated",
+        lambda profile, country, limit: {
+            "fetched": 100,
+            "selected": 20,
+            "added": 20,
+            "total": 20,
+        },
+    )
+
+    response = client.post(
+        "/api/discover/curated",
+        json={"country": "India", "limit": 50},
+    )
+
+    assert response.status_code == 200, response.text
+    assert response.json()["stats"]["added"] == 20
+
+
 def test_discovery_rejects_unknown_category(isolated_db):
     response = client.post(
         "/api/discover",

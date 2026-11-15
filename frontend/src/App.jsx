@@ -5,6 +5,7 @@ import OpportunityCard from "./OpportunityCard";
 import OpportunityDetail from "./OpportunityDetail";
 import ProfileEditor from "./ProfileEditor";
 import AuthScreen from "./AuthScreen";
+import ApplyModal from "./ApplyModal";
 import {
   apiFetch,
   clearAuthToken,
@@ -29,6 +30,8 @@ function App() {
   const [opportunities, setOpportunities] = useState([]);
   const [recommendations, setRecommendations] = useState([]);
   const [profile, setProfile] = useState(null);
+  const [fullProfile, setFullProfile] = useState(null);
+  const [applyItem, setApplyItem] = useState(null);
 
   // Bookmark state
   const [bookmarks, setBookmarks] = useState([]);
@@ -60,6 +63,8 @@ function App() {
   // Discovery state
   const [discovering, setDiscovering] = useState(false);
   const [discoveryMessage, setDiscoveryMessage] = useState("");
+  const [syncingCurated, setSyncingCurated] = useState(false);
+  const [curatedMessage, setCuratedMessage] = useState("");
   const [autoDiscovery, setAutoDiscovery] = useState({
     active: false,
     message: "",
@@ -131,11 +136,13 @@ function App() {
           recommendationsResponse,
           bookmarksResponse,
           applicationsResponse,
+          profileResponse,
         ] = await Promise.all([
           apiFetch("/api/opportunities"),
           apiFetch("/api/recommendations"),
           apiFetch("/api/bookmarks"),
           apiFetch("/api/applications"),
+          apiFetch("/api/profile"),
         ]);
 
         if (
@@ -144,6 +151,7 @@ function App() {
             recommendationsResponse,
             bookmarksResponse,
             applicationsResponse,
+            profileResponse,
           ].some((response) => response.status === 401)
         ) {
           clearAuthToken();
@@ -155,7 +163,8 @@ function App() {
           !opportunitiesResponse.ok ||
           !recommendationsResponse.ok ||
           !bookmarksResponse.ok ||
-          !applicationsResponse.ok
+          !applicationsResponse.ok ||
+          !profileResponse.ok
         ) {
           throw new Error(
             "The backend returned an unsuccessful response."
@@ -167,11 +176,13 @@ function App() {
           recommendationsData,
           bookmarksData,
           applicationsData,
+          profileData,
         ] = await Promise.all([
           opportunitiesResponse.json(),
           recommendationsResponse.json(),
           bookmarksResponse.json(),
           applicationsResponse.json(),
+          profileResponse.json(),
         ]);
 
         if (cancelled) return;
@@ -183,6 +194,7 @@ function App() {
         setProfile(recommendationsData.profile || null);
         setBookmarks(bookmarksData.bookmarks || []);
         setApplications(applicationsData.applications || []);
+        setFullProfile(profileData || null);
       } catch {
         if (!cancelled) {
           setError(
@@ -243,6 +255,40 @@ function App() {
       );
     } finally {
       setDiscovering(false);
+    }
+  }
+
+  async function handleCuratedImport() {
+    setSyncingCurated(true);
+    setCuratedMessage("");
+
+    try {
+      const response = await apiFetch("/api/discover/curated", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ country: "India", limit: 200 }),
+      });
+      const data = await readJson(response);
+
+      if (!response.ok) {
+        throw new Error(
+          errorMessage(
+            data,
+            "Could not sync curated internships."
+          )
+        );
+      }
+
+      setCuratedMessage(
+        `Synced curated internships: ${data.stats.added} new, ${data.count} total records.`
+      );
+      setReloadKey((value) => value + 1);
+    } catch (err) {
+      setCuratedMessage(
+        err.message || "Could not sync curated internships."
+      );
+    } finally {
+      setSyncingCurated(false);
     }
   }
 
@@ -361,6 +407,43 @@ function App() {
     }
   }
 
+  async function handleSaveApplyDetails(details) {
+    if (!fullProfile) {
+      throw new Error("Your profile is still loading.");
+    }
+
+    const response = await apiFetch("/api/profile", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...fullProfile, ...details }),
+    });
+    const data = await readJson(response);
+
+    if (!response.ok) {
+      throw new Error(
+        errorMessage(data, "Could not save your details.")
+      );
+    }
+
+    setFullProfile(data.profile);
+    return data.profile;
+  }
+
+  function requestApply(item) {
+    setApplyItem(item);
+  }
+
+  function handleApplyNow(item) {
+    const url = item?.application_url || item?.source_url;
+
+    setApplyItem(null);
+    handleApplicationStatus(item, "applied");
+
+    if (url) {
+      window.open(url, "_blank", "noopener,noreferrer");
+    }
+  }
+
   function retryConnection() {
     setAuthReloadKey((value) => value + 1);
     setReloadKey((value) => value + 1);
@@ -433,7 +516,10 @@ function App() {
     setOpportunities([]);
     setRecommendations([]);
     setBookmarks([]);
+    setApplications([]);
     setProfile(null);
+    setFullProfile(null);
+    setApplyItem(null);
     setDetailItem(null);
     setActiveView("discover");
   }
@@ -1002,15 +1088,27 @@ function App() {
 
             <div className="section-actions">
               {activeView === "discover" && (
-                <button
-                  className="discover-button"
-                  onClick={handleDiscover}
-                  disabled={discovering || loading}
-                >
-                  {discovering
-                    ? "Searching..."
-                    : "✦ Find New Opportunities"}
-                </button>
+                <>
+                  <button
+                    className="discover-button"
+                    onClick={handleDiscover}
+                    disabled={discovering || loading}
+                  >
+                    {discovering
+                      ? "Searching..."
+                      : "✦ Find New Opportunities"}
+                  </button>
+
+                  <button
+                    className="curated-button"
+                    onClick={handleCuratedImport}
+                    disabled={syncingCurated || loading}
+                  >
+                    {syncingCurated
+                      ? "Syncing..."
+                      : "⤓ Sync curated internships"}
+                  </button>
+                </>
               )}
 
               <span className="result-count">
@@ -1034,6 +1132,12 @@ function App() {
           {applicationMessage && (
             <div className="discovery-message" role="status">
               {applicationMessage}
+            </div>
+          )}
+
+          {curatedMessage && (
+            <div className="discovery-message" role="status">
+              {curatedMessage}
             </div>
           )}
 
@@ -1229,6 +1333,7 @@ function App() {
                     item.source_url
                   )}
                   onBookmark={handleBookmark}
+                  onApply={requestApply}
                   onOpen={setDetailItem}
                 />
               ))}
@@ -1265,8 +1370,21 @@ function App() {
           related={relatedOpportunities}
           onStatusChange={handleApplicationStatus}
           onBookmark={handleBookmark}
+          onApply={requestApply}
           onOpen={setDetailItem}
           onClose={() => setDetailItem(null)}
+        />
+      )}
+
+      {applyItem && (
+        <ApplyModal
+          item={applyItem}
+          profile={fullProfile}
+          email={authUser?.email || ""}
+          busy={applicationBusy}
+          onSaveDetails={handleSaveApplyDetails}
+          onApply={handleApplyNow}
+          onClose={() => setApplyItem(null)}
         />
       )}
     </div>

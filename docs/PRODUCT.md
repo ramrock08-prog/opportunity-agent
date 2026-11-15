@@ -34,6 +34,8 @@ Opportunity Agent deliberately implements differently.
 | Similar opportunities | Same type or shared skills inside the detail drawer |
 | Saved opportunities | Private bookmarks with count and dedicated view |
 | Deep search | Official-career `site:` queries, directory filtering, candidate history |
+| One-click apply | Save contact details, copy a complete application kit, open the official page, track status |
+| Structured inventory | Import 17,000+ open-source internship listings filtered for India/remote |
 | Data honesty | Evidence snippets, deadline evidence, link checks, “not verified open” wording |
 | Reliability | Database candidate history, rate limits, cross-process lock, keep-alive |
 

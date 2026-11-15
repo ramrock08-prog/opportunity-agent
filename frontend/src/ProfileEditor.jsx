@@ -16,6 +16,12 @@ const TYPES = [
 function toForm(profile) {
   return {
     ...profile,
+    phone: profile.phone || "",
+    college: profile.college || "",
+    graduation_year: profile.graduation_year ?? "",
+    github: profile.github || "",
+    linkedin: profile.linkedin || "",
+    portfolio: profile.portfolio || "",
     year_of_study: profile.year_of_study ?? "",
     skills: (profile.skills || []).join(", "),
     interests: (profile.interests || []).join(", "),
@@ -189,6 +195,15 @@ export default function ProfileEditor({
       preferred_locations: toList(form.preferred_locations),
       remote_preferred: form.remote_preferred,
       opportunity_types: form.opportunity_types,
+      phone: form.phone,
+      college: form.college,
+      graduation_year:
+        form.graduation_year === ""
+          ? null
+          : Number(form.graduation_year),
+      github: form.github,
+      linkedin: form.linkedin,
+      portfolio: form.portfolio,
     };
 
     try {
@@ -357,6 +372,72 @@ export default function ProfileEditor({
                       </option>
                     ))}
                   </select>
+                </label>
+
+                <label>
+                  Phone
+                  <input
+                    value={form.phone}
+                    onChange={(e) => updateField("phone", e.target.value)}
+                    placeholder="+91 ..."
+                    maxLength={30}
+                  />
+                </label>
+
+                <label>
+                  College
+                  <input
+                    value={form.college}
+                    onChange={(e) => updateField("college", e.target.value)}
+                    placeholder="College or university"
+                    maxLength={150}
+                  />
+                </label>
+
+                <label>
+                  Graduation year
+                  <input
+                    type="number"
+                    min="2000"
+                    max="2100"
+                    value={form.graduation_year}
+                    onChange={(e) =>
+                      updateField("graduation_year", e.target.value)
+                    }
+                    placeholder="2027"
+                  />
+                </label>
+
+                <label className="full-width">
+                  GitHub
+                  <input
+                    value={form.github}
+                    onChange={(e) => updateField("github", e.target.value)}
+                    placeholder="https://github.com/..."
+                    maxLength={300}
+                  />
+                </label>
+
+                <label className="full-width">
+                  LinkedIn
+                  <input
+                    value={form.linkedin}
+                    onChange={(e) => updateField("linkedin", e.target.value)}
+                    placeholder="https://linkedin.com/in/..."
+                    maxLength={300}
+                  />
+                </label>
+
+                <label className="full-width">
+                  Portfolio
+                  <input
+                    value={form.portfolio}
+                    onChange={(e) =>
+                      updateField("portfolio", e.target.value)
+                    }
+                    placeholder="https://your-site.com"
+                    maxLength={300}
+                  />
                 </label>
 
                 <label className="full-width">
