@@ -124,7 +124,8 @@ psycopg, google-genai, Tavily, PyJWT, requests.
 **Frontend stack:** React 19, Vite 8, JavaScript, CSS, ESLint.
 
 See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for request flows,
-schema, and trust boundaries.
+schema, and trust boundaries, and [`docs/PRODUCT.md`](docs/PRODUCT.md)
+for the Unstop/Internshala product research and our original feature set.
 
 ---
 
