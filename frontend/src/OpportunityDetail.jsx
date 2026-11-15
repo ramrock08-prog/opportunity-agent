@@ -49,12 +49,54 @@ export default function OpportunityDetail({
   matchInfo,
   isSaved,
   isBusy,
+  applicationStatus,
+  applicationBusy,
+  profileSkills,
+  related,
+  onStatusChange,
   onBookmark,
+  onOpen,
   onClose,
 }) {
   const [verification, setVerification] = useState(null);
   const [verifying, setVerifying] = useState(false);
   const [verifyError, setVerifyError] = useState("");
+  const [statusValue, setStatusValue] = useState(
+    applicationStatus || ""
+  );
+  const [statusNote, setStatusNote] = useState("");
+  const [copied, setCopied] = useState(false);
+
+  const requiredSkills = (item.required_skills || []).filter(Boolean);
+  const userSkills = (profileSkills || []).filter(Boolean);
+
+  const matchedSkills = requiredSkills.filter((required) =>
+    userSkills.some((skill) => {
+      const left = required.toLowerCase();
+      const right = skill.toLowerCase();
+      return left.includes(right) || right.includes(left);
+    })
+  );
+
+  const missingSkills = requiredSkills.filter(
+    (skill) => !matchedSkills.includes(skill)
+  );
+
+  async function copyLink() {
+    const link = safeHttpUrl(
+      item.application_url || item.source_url
+    );
+
+    if (!link) return;
+
+    try {
+      await navigator.clipboard.writeText(link);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    } catch {
+      setCopied(false);
+    }
+  }
 
   async function runLinkCheck() {
     setVerifying(true);
@@ -174,6 +216,48 @@ export default function OpportunityDetail({
               "No description was extracted from the source page."}
           </p>
 
+          <section className="detail-section tracker-section">
+            <h4>Application tracker</h4>
+
+            <div className="tracker-row">
+              <select
+                value={statusValue}
+                onChange={(event) =>
+                  setStatusValue(event.target.value)
+                }
+                aria-label="Application status"
+              >
+                <option value="">Not tracked</option>
+                <option value="interested">Interested</option>
+                <option value="applied">Applied</option>
+                <option value="interview">Interview</option>
+                <option value="offer">Offer</option>
+                <option value="rejected">Rejected</option>
+              </select>
+
+              <button
+                type="button"
+                className="tracker-save"
+                disabled={applicationBusy}
+                onClick={() =>
+                  onStatusChange(item, statusValue, statusNote)
+                }
+              >
+                {applicationBusy ? "Saving..." : "Save status"}
+              </button>
+            </div>
+
+            <textarea
+              className="tracker-note"
+              value={statusNote}
+              maxLength={500}
+              placeholder="Optional note, for example the date you applied"
+              onChange={(event) =>
+                setStatusNote(event.target.value)
+              }
+            />
+          </section>
+
           <div className="detail-grid">
             <Value label="LOCATION">{item.location}</Value>
             <Value label="DEADLINE">
@@ -213,6 +297,46 @@ export default function OpportunityDetail({
             values={item.required_skills}
             emptyText="No required skills were listed in the extracted source."
           />
+
+          <section className="detail-section">
+            <h4>Skill match</h4>
+
+            {requiredSkills.length ? (
+              <>
+                <p className="detail-empty">
+                  You match {matchedSkills.length} of{" "}
+                  {requiredSkills.length} listed skills.
+                </p>
+
+                {matchedSkills.length > 0 && (
+                  <>
+                    <span className="meta-label">You match</span>
+                    <ul className="tag-list matched-list">
+                      {matchedSkills.map((skill) => (
+                        <li key={skill}>{skill}</li>
+                      ))}
+                    </ul>
+                  </>
+                )}
+
+                {missingSkills.length > 0 && (
+                  <>
+                    <span className="meta-label">Skill gaps</span>
+                    <ul className="tag-list missing-list">
+                      {missingSkills.map((skill) => (
+                        <li key={skill}>{skill}</li>
+                      ))}
+                    </ul>
+                  </>
+                )}
+              </>
+            ) : (
+              <p className="detail-empty">
+                This listing did not publish required skills, so a skill
+                match cannot be calculated.
+              </p>
+            )}
+          </section>
 
           <TagList
             title="Fields / disciplines"
@@ -258,6 +382,31 @@ export default function OpportunityDetail({
               </p>
             )}
           </section>
+
+          {related?.length > 0 && (
+            <section className="detail-section">
+              <h4>Similar opportunities</h4>
+
+              <div className="related-list">
+                {related.map((relatedItem) => (
+                  <button
+                    key={relatedItem.source_url}
+                    type="button"
+                    className="related-item"
+                    onClick={() => onOpen(relatedItem)}
+                  >
+                    <strong>{relatedItem.title}</strong>
+                    <span>
+                      {relatedItem.type} ·{" "}
+                      {relatedItem.organization ||
+                        relatedItem.source ||
+                        "Organization not specified"}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </section>
+          )}
 
           <section className="detail-section">
             <h4>Where the data came from</h4>
@@ -355,14 +504,28 @@ export default function OpportunityDetail({
         </div>
 
         <footer className="detail-footer">
-          <button
-            className={`bookmark-button ${isSaved ? "saved" : ""}`}
-            onClick={() => onBookmark(item)}
-            disabled={isBusy}
-            aria-pressed={isSaved}
-          >
-            {isBusy ? "Saving..." : isSaved ? "★ Saved" : "☆ Save opportunity"}
-          </button>
+          <div className="detail-footer-actions">
+            <button
+              className={`bookmark-button ${isSaved ? "saved" : ""}`}
+              onClick={() => onBookmark(item)}
+              disabled={isBusy}
+              aria-pressed={isSaved}
+            >
+              {isBusy
+                ? "Saving..."
+                : isSaved
+                  ? "★ Saved"
+                  : "☆ Save opportunity"}
+            </button>
+
+            <button
+              type="button"
+              className="share-button"
+              onClick={copyLink}
+            >
+              {copied ? "Link copied" : "Share"}
+            </button>
+          </div>
 
           {applyUrl ? (
             <a

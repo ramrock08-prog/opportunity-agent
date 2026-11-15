@@ -23,7 +23,7 @@ software engineering or AI/ML placement interview.
 5. **Profile** — change a skill or interest, save, and show the
    recommendation score/reasons changing.
 6. **API docs** — open `/docs`, mention validation and auth dependencies.
-7. **Tests** — run `pytest`, mention 90 tests and the Playwright flows.
+7. **Tests** — run `pytest`, mention 94 tests and the Playwright flows.
 8. **Architecture** — open `docs/ARCHITECTURE.md`; discuss trust
    boundaries and SQLite trade-offs.
 
@@ -152,13 +152,15 @@ contains. The product communicates this uncertainty instead of hiding it.
 
 ## Metrics to quote accurately
 
-- 90 automated tests: 86 SQLite + 4 PostgreSQL integration tests.
+- 94 automated tests: 90 SQLite + 4 PostgreSQL integration tests.
 - 2 Playwright browser flows (bookmarks/detail, verification/reset/profile).
 - 7 opportunity categories.
 - 6 scoring components with transparent reasons.
 - Storage migration: legacy JSON → SQLite/PostgreSQL (schema version 3).
 - Security controls: PBKDF2, revocable sessions, verification, reset,
   lockout, rate limits, SSRF guard.
+- Product features: resume onboarding, deep discovery, advanced filters,
+  application tracker, skill gaps, deadline radar, similar opportunities.
 
 Avoid quoting user numbers or deployment traffic; the project has not
 been publicly deployed yet.

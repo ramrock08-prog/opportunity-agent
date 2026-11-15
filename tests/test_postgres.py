@@ -30,6 +30,7 @@ TABLES = (
     "rate_limits",
     "discovery_locks",
     "discovery_candidates",
+    "application_status",
     "user_bookmarks",
     "user_profiles",
     "users",

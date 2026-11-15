@@ -133,6 +133,43 @@ def test_verify_endpoint_uses_stored_record(
     ] == "reachable"
 
 
+def test_application_tracker_endpoints(isolated_db):
+    url = "https://example.com/track-me"
+
+    saved = client.put(
+        "/api/applications",
+        json={
+            "source_url": url,
+            "status": "applied",
+            "note": "Submitted resume",
+        },
+    )
+    assert saved.status_code == 200, saved.text
+    assert saved.json()["summary"]["applied"] == 1
+
+    listed = client.get("/api/applications")
+    assert listed.status_code == 200
+    assert listed.json()["count"] == 1
+
+    removed = client.delete(
+        "/api/applications", params={"url": url}
+    )
+    assert removed.status_code == 200
+    assert removed.json()["count"] == 0
+
+
+def test_application_tracker_rejects_bad_status(isolated_db):
+    response = client.put(
+        "/api/applications",
+        json={
+            "source_url": "https://example.com/x",
+            "status": "made-up",
+        },
+    )
+
+    assert response.status_code == 422
+
+
 def test_discovery_rejects_unknown_category(isolated_db):
     response = client.post(
         "/api/discover",

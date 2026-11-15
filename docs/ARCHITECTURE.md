@@ -164,6 +164,12 @@ discovery_locks(name PRIMARY KEY, owner, acquired_at, expires_at)
 discovery_candidates(
   url PRIMARY KEY, category, attempts, last_attempted, outcome
 )
+
+application_status(
+  user_id REFERENCES users(id),
+  opportunity_url, status, note, updated_at,
+  PRIMARY KEY(user_id, opportunity_url)
+)
 ```
 
 Legacy tables `profile` and `bookmarks` are read once during migration

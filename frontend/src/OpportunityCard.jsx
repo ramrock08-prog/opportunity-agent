@@ -4,6 +4,7 @@ export default function OpportunityCard({
   item,
   isSaved,
   isBusy,
+  applicationStatus,
   onBookmark,
   onOpen,
 }) {
@@ -24,6 +25,12 @@ export default function OpportunityCard({
         {item.matchScore !== undefined && (
           <span className="match-badge">
             {item.matchScore}% match
+          </span>
+        )}
+
+        {applicationStatus && (
+          <span className={`status-pill status-${applicationStatus}`}>
+            {applicationStatus}
           </span>
         )}
 

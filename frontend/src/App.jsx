@@ -12,6 +12,7 @@ import {
   getAuthToken,
   readJson,
 } from "./api";
+import { daysUntil } from "./utils";
 
 const CATEGORIES = [
   { label: "All opportunities", value: "all" },
@@ -33,6 +34,18 @@ function App() {
   const [bookmarks, setBookmarks] = useState([]);
   const [bookmarkBusy, setBookmarkBusy] = useState({});
   const [bookmarkMessage, setBookmarkMessage] = useState("");
+
+  // Application tracker state
+  const [applications, setApplications] = useState([]);
+  const [applicationBusy, setApplicationBusy] = useState(false);
+  const [applicationMessage, setApplicationMessage] = useState("");
+
+  // Advanced filter state
+  const [filterPanelOpen, setFilterPanelOpen] = useState(false);
+  const [workMode, setWorkMode] = useState("any");
+  const [deadlineWindow, setDeadlineWindow] = useState("any");
+  const [paidOnly, setPaidOnly] = useState(false);
+  const [skillMatchOnly, setSkillMatchOnly] = useState(false);
 
   // Dashboard state
   const [activeCategory, setActiveCategory] = useState("all");
@@ -117,15 +130,21 @@ function App() {
           opportunitiesResponse,
           recommendationsResponse,
           bookmarksResponse,
+          applicationsResponse,
         ] = await Promise.all([
           apiFetch("/api/opportunities"),
           apiFetch("/api/recommendations"),
           apiFetch("/api/bookmarks"),
+          apiFetch("/api/applications"),
         ]);
 
         if (
-          [opportunitiesResponse, recommendationsResponse, bookmarksResponse]
-            .some((response) => response.status === 401)
+          [
+            opportunitiesResponse,
+            recommendationsResponse,
+            bookmarksResponse,
+            applicationsResponse,
+          ].some((response) => response.status === 401)
         ) {
           clearAuthToken();
           if (!cancelled) setAuthUser(null);
@@ -135,7 +154,8 @@ function App() {
         if (
           !opportunitiesResponse.ok ||
           !recommendationsResponse.ok ||
-          !bookmarksResponse.ok
+          !bookmarksResponse.ok ||
+          !applicationsResponse.ok
         ) {
           throw new Error(
             "The backend returned an unsuccessful response."
@@ -146,10 +166,12 @@ function App() {
           opportunitiesData,
           recommendationsData,
           bookmarksData,
+          applicationsData,
         ] = await Promise.all([
           opportunitiesResponse.json(),
           recommendationsResponse.json(),
           bookmarksResponse.json(),
+          applicationsResponse.json(),
         ]);
 
         if (cancelled) return;
@@ -160,6 +182,7 @@ function App() {
         );
         setProfile(recommendationsData.profile || null);
         setBookmarks(bookmarksData.bookmarks || []);
+        setApplications(applicationsData.applications || []);
       } catch {
         if (!cancelled) {
           setError(
@@ -281,6 +304,63 @@ function App() {
     }
   }
 
+  async function handleApplicationStatus(
+    item,
+    status,
+    note = ""
+  ) {
+    const url = item?.source_url;
+
+    if (!url) {
+      setApplicationMessage("This opportunity has no source URL.");
+      return;
+    }
+
+    setApplicationBusy(true);
+    setApplicationMessage("");
+
+    try {
+      const response = status
+        ? await apiFetch("/api/applications", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              source_url: url,
+              status,
+              note,
+            }),
+          })
+        : await apiFetch(
+            `/api/applications?url=${encodeURIComponent(url)}`,
+            { method: "DELETE" }
+          );
+
+      const data = await readJson(response);
+
+      if (!response.ok) {
+        throw new Error(
+          errorMessage(
+            data,
+            "Could not update the application tracker."
+          )
+        );
+      }
+
+      setApplications(data.applications || []);
+      setApplicationMessage(
+        status
+          ? `Tracked as "${status}".`
+          : "Removed from the application tracker."
+      );
+    } catch (err) {
+      setApplicationMessage(
+        err.message || "Could not update the application tracker."
+      );
+    } finally {
+      setApplicationBusy(false);
+    }
+  }
+
   function retryConnection() {
     setAuthReloadKey((value) => value + 1);
     setReloadKey((value) => value + 1);
@@ -363,8 +443,52 @@ function App() {
     setReloadKey((value) => value + 1);
   }, []);
 
+  const profileSkills = useMemo(
+    () => profile?.skills || [],
+    [profile]
+  );
+
+  const applicationStatusByUrl = useMemo(
+    () =>
+      new Map(
+        applications.map((item) => [
+          item.source_url,
+          item.status,
+        ])
+      ),
+    [applications]
+  );
+
+  const relatedOpportunities = useMemo(() => {
+    if (!detailItem) return [];
+
+    const currentSkills = new Set([
+      ...(detailItem.required_skills || []),
+      ...(detailItem.fields || []),
+    ]);
+
+    return opportunities
+      .filter((item) => {
+        if (item.source_url === detailItem.source_url) return false;
+
+        const sharesSkill = (item.required_skills || []).some(
+          (skill) => currentSkills.has(skill)
+        );
+
+        return item.type === detailItem.type || sharesSkill;
+      })
+      .slice(0, 4);
+  }, [opportunities, detailItem]);
+
   // Filter opportunities and attach their recommendation scores
   const visibleOpportunities = useMemo(() => {
+    const trackedByUrl = new Map(
+      applications.map((item) => [
+        item.source_url,
+        item.status,
+      ])
+    );
+
     const matchByUrl = new Map(
       recommendations.map((item) => [
         item.opportunity?.source_url,
@@ -401,6 +525,60 @@ function App() {
       results = results.filter((item) =>
         bookmarks.includes(item.source_url)
       );
+    }
+
+    if (activeView === "applications") {
+      results = results.filter((item) =>
+        trackedByUrl.has(item.source_url)
+      );
+    }
+
+    if (workMode !== "any") {
+      results = results.filter((item) => {
+        if (workMode === "remote") return item.remote === true;
+        if (workMode === "onsite") return item.remote === false;
+        return item.remote === null || item.remote === undefined;
+      });
+    }
+
+    if (deadlineWindow !== "any") {
+      results = results.filter((item) => {
+        const remaining = daysUntil(item.deadline);
+
+        if (deadlineWindow === "none") return remaining === null;
+        if (remaining === null) return false;
+
+        if (deadlineWindow === "7") {
+          return remaining >= 0 && remaining <= 7;
+        }
+
+        return remaining >= 0 && remaining <= 30;
+      });
+    }
+
+    if (paidOnly) {
+      results = results.filter(
+        (item) => item.stipend || item.prize_money
+      );
+    }
+
+    if (skillMatchOnly && profileSkills.length) {
+      results = results.filter((item) => {
+        const text = [
+          item.title,
+          item.organization,
+          item.description,
+          ...(item.required_skills || []),
+          ...(item.fields || []),
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+
+        return profileSkills.some((skill) =>
+          text.includes(skill.toLowerCase())
+        );
+      });
     }
 
     if (activeCategory !== "all") {
@@ -456,15 +634,41 @@ function App() {
     opportunities,
     recommendations,
     bookmarks,
+    applications,
     activeView,
     activeCategory,
     searchText,
     sortMode,
+    workMode,
+    deadlineWindow,
+    paidOnly,
+    skillMatchOnly,
+    profileSkills,
   ]);
 
   const categoryCount = new Set(
     opportunities.map((item) => item.type)
   ).size;
+
+  const closingSoonCount = opportunities.filter((item) => {
+    const remaining = daysUntil(item.deadline);
+    return remaining !== null && remaining >= 0 && remaining <= 7;
+  }).length;
+
+  const applicationCounts = applications.reduce(
+    (counts, item) => {
+      counts[item.status] = (counts[item.status] || 0) + 1;
+      return counts;
+    },
+    {}
+  );
+
+  const advancedFilterCount = [
+    workMode !== "any",
+    deadlineWindow !== "any",
+    paidOnly,
+    skillMatchOnly,
+  ].filter(Boolean).length;
 
   const profileIncomplete = Boolean(
     !loading &&
@@ -547,6 +751,17 @@ function App() {
           <span className="side-count">{bookmarks.length}</span>
         </button>
 
+        <button
+          className={`side-link ${
+            activeView === "applications" ? "selected" : ""
+          }`}
+          onClick={() => setActiveView("applications")}
+        >
+          <span className="side-icon">◈</span>
+          Applications
+          <span className="side-count">{applications.length}</span>
+        </button>
+
         <div className="sidebar-label second-label">YOUR PROFILE</div>
 
         <div className="profile-mini">
@@ -600,7 +815,9 @@ function App() {
               ? "For you"
               : activeView === "saved"
                 ? "Saved opportunities"
-                : "Discover"}
+                : activeView === "applications"
+                  ? "Applications"
+                  : "Discover"}
           </div>
 
           <div className="topbar-right">
@@ -734,6 +951,15 @@ function App() {
               Relevance estimate, not eligibility
             </div>
           </div>
+
+          <div className="stat-card">
+            <div className="stat-icon amber">◷</div>
+            <div className="stat-label">Closing within 7 days</div>
+            <div className="stat-value">
+              {loading ? "—" : closingSoonCount}
+            </div>
+            <div className="stat-foot">From published deadlines</div>
+          </div>
         </section>
 
         <section
@@ -749,7 +975,9 @@ function App() {
                   ? "Recommended for you"
                   : activeView === "saved"
                     ? "Saved opportunities"
-                    : "Explore opportunities"}
+                    : activeView === "applications"
+                      ? "My applications"
+                      : "Explore opportunities"}
               </h2>
 
               <p>
@@ -757,7 +985,9 @@ function App() {
                   ? "Ranked using your interests and profile."
                   : activeView === "saved"
                     ? "Your bookmarked opportunities, saved for later."
-                    : "Search and filter the opportunities in your workspace."}
+                    : activeView === "applications"
+                      ? "Track what you applied to and where each application stands."
+                      : "Search and filter the opportunities in your workspace."}
               </p>
 
               {activeView === "discover" &&
@@ -801,6 +1031,12 @@ function App() {
             </div>
           )}
 
+          {applicationMessage && (
+            <div className="discovery-message" role="status">
+              {applicationMessage}
+            </div>
+          )}
+
           <div className="toolbar">
             <label className="search-box">
               <span>⌕</span>
@@ -827,16 +1063,88 @@ function App() {
             </label>
 
             <button
+              className={`filter-reset ${
+                advancedFilterCount ? "has-filters" : ""
+              }`}
+              onClick={() => setFilterPanelOpen((open) => !open)}
+            >
+              Filters
+              {advancedFilterCount
+                ? ` (${advancedFilterCount})`
+                : ""}
+            </button>
+
+            <button
               className="filter-reset"
               onClick={() => {
                 setSearchText("");
                 setActiveCategory("all");
                 setSortMode("match");
+                setWorkMode("any");
+                setDeadlineWindow("any");
+                setPaidOnly(false);
+                setSkillMatchOnly(false);
               }}
             >
               Clear filters
             </button>
           </div>
+
+          {filterPanelOpen && (
+            <div className="filter-panel">
+              <label>
+                Work mode
+                <select
+                  value={workMode}
+                  onChange={(event) =>
+                    setWorkMode(event.target.value)
+                  }
+                >
+                  <option value="any">Any</option>
+                  <option value="remote">Remote</option>
+                  <option value="onsite">On-site</option>
+                  <option value="unknown">Not stated</option>
+                </select>
+              </label>
+
+              <label>
+                Deadline
+                <select
+                  value={deadlineWindow}
+                  onChange={(event) =>
+                    setDeadlineWindow(event.target.value)
+                  }
+                >
+                  <option value="any">Any</option>
+                  <option value="7">Closing within 7 days</option>
+                  <option value="30">Closing within 30 days</option>
+                  <option value="none">No deadline listed</option>
+                </select>
+              </label>
+
+              <label className="filter-check">
+                <input
+                  type="checkbox"
+                  checked={paidOnly}
+                  onChange={(event) =>
+                    setPaidOnly(event.target.checked)
+                  }
+                />
+                Stipend/prize listed
+              </label>
+
+              <label className="filter-check">
+                <input
+                  type="checkbox"
+                  checked={skillMatchOnly}
+                  onChange={(event) =>
+                    setSkillMatchOnly(event.target.checked)
+                  }
+                />
+                Matches my skills
+              </label>
+            </div>
+          )}
 
           <div className="category-filters">
             {CATEGORIES.map((category) => (
@@ -851,6 +1159,22 @@ function App() {
               </button>
             ))}
           </div>
+
+          {activeView === "applications" &&
+            applications.length > 0 && (
+              <div className="application-summary">
+                {["interested", "applied", "interview", "offer", "rejected"]
+                  .filter((status) => applicationCounts[status])
+                  .map((status) => (
+                    <span
+                      className={`status-pill status-${status}`}
+                      key={status}
+                    >
+                      {status}: {applicationCounts[status]}
+                    </span>
+                  ))}
+              </div>
+            )}
 
           {loading ? (
             <div className="empty-state">
@@ -867,7 +1191,9 @@ function App() {
                   ? "Your workspace is waiting to connect"
                   : activeView === "saved"
                     ? "No saved opportunities yet"
-                    : "No matching opportunities yet"}
+                    : activeView === "applications"
+                      ? "No applications tracked yet"
+                      : "No matching opportunities yet"}
               </h3>
 
               <p>
@@ -875,7 +1201,9 @@ function App() {
                   ? "Start the FastAPI backend and try refreshing."
                   : activeView === "saved"
                     ? "Use the Save button on an opportunity card to keep it here."
-                    : "Try another category or search term. You can also run discovery to find more opportunities."}
+                    : activeView === "applications"
+                      ? "Open an opportunity, choose a status, and it will appear here."
+                      : "Try another category or search term. You can also run discovery to find more opportunities."}
               </p>
 
               <button
@@ -897,6 +1225,9 @@ function App() {
                   item={item}
                   isSaved={bookmarks.includes(item.source_url)}
                   isBusy={Boolean(bookmarkBusy[item.source_url])}
+                  applicationStatus={applicationStatusByUrl.get(
+                    item.source_url
+                  )}
                   onBookmark={handleBookmark}
                   onOpen={setDetailItem}
                 />
@@ -926,7 +1257,15 @@ function App() {
           )}
           isSaved={bookmarks.includes(detailItem.source_url)}
           isBusy={Boolean(bookmarkBusy[detailItem.source_url])}
+          applicationStatus={applicationStatusByUrl.get(
+            detailItem.source_url
+          )}
+          applicationBusy={applicationBusy}
+          profileSkills={profileSkills}
+          related={relatedOpportunities}
+          onStatusChange={handleApplicationStatus}
           onBookmark={handleBookmark}
+          onOpen={setDetailItem}
           onClose={() => setDetailItem(null)}
         />
       )}

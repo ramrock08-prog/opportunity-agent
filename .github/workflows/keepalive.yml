@@ -1,0 +1,20 @@
+name: Keep Render awake
+
+on:
+  schedule:
+    # Render free instances sleep after inactivity. Ping often enough
+    # that a visitor opens the site immediately.
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping health endpoint
+        run: |
+          curl -fsS --max-time 60 \
+            https://opportunity-agent-v39s.onrender.com/api/health

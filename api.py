@@ -15,6 +15,12 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from ai import extract_profile_from_resume
+from application_tracker import (
+    application_summary,
+    load_applications,
+    remove_application,
+    set_application_status,
+)
 from auth import (
     EmailNotVerifiedError,
     auth_configuration_warning,
@@ -93,6 +99,12 @@ class BookmarkRequest(BaseModel):
 
 class VerifyRequest(BaseModel):
     source_url: str
+
+
+class ApplicationStatusRequest(BaseModel):
+    source_url: str = Field(min_length=5, max_length=2000)
+    status: str = Field(min_length=3, max_length=20)
+    note: str = Field(default="", max_length=500)
 
 
 class RegisterRequest(BaseModel):
@@ -573,6 +585,75 @@ def delete_bookmark(
             status_code=500,
             detail="Unable to remove bookmark.",
         ) from error
+
+
+@app.get("/api/applications")
+def get_applications(user: dict = Depends(current_user)):
+    """Return this user's application tracker rows."""
+    try:
+        applications = load_applications(user["id"])
+        return {
+            "count": len(applications),
+            "summary": application_summary(user["id"]),
+            "applications": applications,
+        }
+    except (RuntimeError, OSError) as error:
+        raise HTTPException(
+            status_code=500,
+            detail="Unable to load applications.",
+        ) from error
+
+
+@app.put("/api/applications")
+def update_application(
+    request: ApplicationStatusRequest,
+    user: dict = Depends(current_user),
+):
+    """Create or update an application tracker row."""
+    try:
+        set_application_status(
+            request.source_url,
+            request.status,
+            request.note,
+            user["id"],
+        )
+    except ValueError as error:
+        raise HTTPException(
+            status_code=422, detail=str(error)
+        ) from error
+    except (RuntimeError, OSError) as error:
+        raise HTTPException(
+            status_code=500,
+            detail="Unable to save the application status.",
+        ) from error
+
+    return {
+        "status": "saved",
+        "summary": application_summary(user["id"]),
+        "applications": load_applications(user["id"]),
+    }
+
+
+@app.delete("/api/applications")
+def delete_application(
+    url: str,
+    user: dict = Depends(current_user),
+):
+    """Stop tracking an opportunity."""
+    try:
+        applications = remove_application(url, user["id"])
+    except (RuntimeError, OSError) as error:
+        raise HTTPException(
+            status_code=500,
+            detail="Unable to remove the application.",
+        ) from error
+
+    return {
+        "status": "removed",
+        "count": len(applications),
+        "summary": application_summary(user["id"]),
+        "applications": applications,
+    }
 
 
 @app.get("/api/profile")

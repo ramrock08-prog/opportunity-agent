@@ -52,10 +52,15 @@ preserved and generalized in Opportunity Agent.
 
 ### Web application
 - Responsive React dashboard with dark sidebar.
-- Search, category filters, and sorting that work together.
+- Search, category filters, and advanced work-mode/deadline/skills filters.
 - Personalized "For you" ranking with transparent reasons.
 - Save/unsave opportunities with persistent per-user bookmarks.
-- Saved opportunities view with a live count.
+- Application tracker with interested/applied/interview/offer/rejected
+  stages and private notes.
+- Saved opportunities and Applications views with live counts.
+- Closing-within-7-days radar and deadline-aware sorting.
+- Skill-match and skill-gap comparison against the profile.
+- Similar-opportunity suggestions and shareable links.
 - Opportunity detail drawer with eligibility, skills, stipend, evidence,
   source/application links, and a manual link check.
 - First-run profile onboarding for new accounts.
@@ -89,7 +94,7 @@ preserved and generalized in Opportunity Agent.
 - Verification and reset emails through Gmail SMTP.
 - GitHub Actions scheduled discovery with JSON snapshot persistence.
 - Docker multi-stage build; Render blueprint included.
-- 86 SQLite tests + 4 PostgreSQL integration tests, plus two Playwright
+- 90 SQLite tests + 4 PostgreSQL integration tests, plus two Playwright
   browser flows.
 
 ---
@@ -280,6 +285,9 @@ malformed rows do not silently accumulate.
 | GET | `/api/bookmarks` | User | Current user's bookmarks |
 | POST | `/api/bookmarks` | User | Save a bookmark |
 | DELETE | `/api/bookmarks?url=...` | User | Remove a bookmark |
+| GET | `/api/applications` | User | Application tracker rows and counts |
+| PUT | `/api/applications` | User | Set status/note for an opportunity |
+| DELETE | `/api/applications?url=...` | User | Stop tracking an opportunity |
 
 "User" means the demo user when `AUTH_REQUIRED=0`, or a valid bearer token
 when authentication is enabled.
@@ -294,9 +302,9 @@ when authentication is enabled.
 .\.venv\Scripts\python.exe -m pytest
 ```
 
-Current result: **86 passed, 4 skipped** with SQLite (PostgreSQL tests
+Current result: **90 passed, 4 skipped** with SQLite (PostgreSQL tests
 are skipped unless a database is configured). With the local PostgreSQL
-server enabled: **90 passed**.
+server enabled: **94 passed**.
 
 ```powershell
 # Starts a temporary PostgreSQL server with pgserver and runs the 3
@@ -379,7 +387,7 @@ resume.py               PDF/DOCX/TXT resume text extraction
 ├── run_agent.py            Discovery pipeline CLI
 ├── notify.py               HTML email digest
 ├── agent.py                Legacy original drone scout (kept for history)
-├── tests/                  86 SQLite tests + 4 PostgreSQL tests
+├── tests/                  90 SQLite tests + 4 PostgreSQL tests
 ├── scripts/
 │   ├── e2e_bookmarks.py    Playwright bookmark/details flow
 │   ├── e2e_auth.py         Playwright auth flow
@@ -477,8 +485,9 @@ verification is fully implemented and tested; to enforce it, add
 set `AUTH_REQUIRE_VERIFIED=1`, and redeploy. Do not enable
 `AUTH_DEV_SHOW_TOKENS` publicly.
 
-The free Render web instance sleeps after inactivity; the first request
-may take several seconds. The free PostgreSQL instance is managed by
+The free Render web instance sleeps after inactivity; a GitHub Actions
+keep-alive workflow pings `/api/health` every 10 minutes so the site
+normally opens immediately. The free PostgreSQL instance is managed by
 Render and may have its own retention policy.
 
 ---

@@ -20,6 +20,24 @@ def api_bookmarks() -> list[str]:
         return json.loads(response.read().decode("utf-8"))["bookmarks"]
 
 
+def api_application_urls() -> list[str]:
+    with urllib.request.urlopen(
+        f"{API_URL}/api/applications"
+    ) as response:
+        data = json.loads(response.read().decode("utf-8"))
+
+    return [item["source_url"] for item in data["applications"]]
+
+
+def remove_api_application(url: str) -> None:
+    request = urllib.request.Request(
+        f"{API_URL}/api/applications?url="
+        f"{urllib.parse.quote(url, safe='')}",
+        method="DELETE",
+    )
+    urllib.request.urlopen(request).read()
+
+
 def set_api_bookmarks(urls: list[str]) -> None:
     """Restore a known bookmark list through the public API."""
     current = api_bookmarks()
@@ -180,6 +198,35 @@ def _run_browser_test(original_bookmarks: list[str]) -> int:
         assert target_url not in api_bookmarks(), "DELETE did not remove bookmark."
         print("Removing a bookmark updates storage and the Saved view.")
 
+        # 6. Application tracker from the detail drawer.
+        page.locator(".side-link", has_text="Discover").click()
+        discover_card = page.locator(
+            ".opportunity-card", has_text=title
+        )
+        discover_card.locator(".details-button").click()
+        dialog = page.get_by_role("dialog")
+        expect(dialog).to_be_visible(timeout=10_000)
+        dialog.get_by_label("Application status").select_option(
+            "applied"
+        )
+        dialog.get_by_role(
+            "button", name="Save status"
+        ).click()
+        expect(
+            page.locator(
+                ".opportunity-card", has_text=title
+            ).locator(".status-pill", has_text="applied")
+        ).to_be_visible(timeout=10_000)
+        page.keyboard.press("Escape")
+
+        page.locator(
+            ".side-link", has_text="Applications"
+        ).click()
+        expect(
+            page.locator(".opportunity-card", has_text=title)
+        ).to_be_visible(timeout=10_000)
+        print("Application tracker and Applications view work.")
+
         browser.close()
 
     if console_errors:
@@ -194,13 +241,22 @@ def _run_browser_test(original_bookmarks: list[str]) -> int:
 
 def main() -> int:
     original_bookmarks = api_bookmarks()
+    original_applications = api_application_urls()
 
     try:
         return _run_browser_test(original_bookmarks)
     finally:
         set_api_bookmarks(original_bookmarks)
+
+        for url in api_application_urls():
+            if url not in original_applications:
+                remove_api_application(url)
+
         assert api_bookmarks() == original_bookmarks, "Bookmark restore failed."
-        print("Original bookmarks restored.")
+        assert api_application_urls() == original_applications, (
+            "Application restore failed."
+        )
+        print("Original bookmarks and applications restored.")
 
 
 if __name__ == "__main__":
