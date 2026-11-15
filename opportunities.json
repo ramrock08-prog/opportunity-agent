@@ -20,7 +20,9 @@
     "stipend": null,
     "prize_money": null,
     "source": "databricks.com",
-    "confidence": 0.9
+    "confidence": 0.9,
+    "evidence": [],
+    "deadline_evidence": null
   },
   {
     "title": "Software Engineer - Winter Intern",
@@ -53,7 +55,9 @@
     "stipend": null,
     "prize_money": null,
     "source": "rubrik.com",
-    "confidence": 0.95
+    "confidence": 0.95,
+    "evidence": [],
+    "deadline_evidence": null
   },
   {
     "title": "Software Engineer Intern - Summer 2027",
@@ -90,6 +94,304 @@
     "stipend": "Highly competitive compensation package with accommodations included",
     "prize_money": null,
     "source": "imc.com",
-    "confidence": 0.95
+    "confidence": 0.95,
+    "evidence": [],
+    "deadline_evidence": null
+  },
+  {
+    "title": "CPU Compiler Intern - 2027",
+    "type": "internship",
+    "organization": "NVIDIA",
+    "description": "Internship for the Grace CPU compiler team at NVIDIA working on AI and HPC workloads.",
+    "source_url": "https://jobs.nvidia.com/careers/job/893398107737?domain=nvidia.com&hl=en",
+    "application_url": "https://jobs.nvidia.com/careers/job/893398107737?domain=nvidia.com&hl=en",
+    "deadline": null,
+    "start_date": null,
+    "location": "India, Pune +1",
+    "remote": null,
+    "eligibility": [],
+    "required_skills": [],
+    "fields": [
+      "CPU Compiler",
+      "AI",
+      "HPC"
+    ],
+    "degree_requirements": [],
+    "year_requirements": [
+      "2027"
+    ],
+    "stipend": null,
+    "prize_money": null,
+    "source": "jobs.nvidia.com",
+    "confidence": 0.8,
+    "evidence": [
+      "CPU Compiler Intern - 2027 - NVIDIA Careers",
+      "Intern - 2027 India, Pune +1. We are looking for an energetic intern for the Grace CPU compiler team at NVIDIA. largest AI and HPC workloads"
+    ],
+    "deadline_evidence": null
+  },
+  {
+    "title": "Support Engineer Intern – 2027",
+    "type": "internship",
+    "organization": "Amazon",
+    "description": "Amazon is seeking Support Engineer Interns to collaborate with software development teams, experience humongous scale, and get exposure to disruptive technologies applied in software solutions.",
+    "source_url": "https://amazon.jobs/en/jobs/10498163/support-engineer-intern-2027",
+    "application_url": "https://amazon.jobs/en/jobs/10498163/support-engineer-intern-2027",
+    "deadline": null,
+    "start_date": null,
+    "location": "India, Bengaluru and Chennai",
+    "remote": null,
+    "eligibility": [
+      "Are enrolled in or have completed a Bachelor's degree"
+    ],
+    "required_skills": [
+      "computer science fundamentals such as object-oriented design, operating systems, algorithms, data structures, and complexity analysis"
+    ],
+    "fields": [
+      "Support Engineering",
+      "Computer Science"
+    ],
+    "degree_requirements": [
+      "Bachelor's degree"
+    ],
+    "year_requirements": [],
+    "stipend": null,
+    "prize_money": null,
+    "source": "amazon.jobs",
+    "confidence": 0.9,
+    "evidence": [
+      "Support Engineer Intern – 2027",
+      "Job location-By applying to this position your application will be considered for all locations we hire for in India. This includes but is not limited to Bengaluru and Chennai.",
+      "Are enrolled in or have completed a Bachelor's degree"
+    ],
+    "deadline_evidence": null
+  },
+  {
+    "title": "Software Engineering PhD Intern, Summer 2027",
+    "type": "internship",
+    "organization": "Google",
+    "description": "Join us for a 12+ week paid internship that offers personal and professional development, an executive speaker series, and community-building, working on complex computer science solutions and scalable, distributed software systems.",
+    "source_url": "https://careers.google.com/jobs/results/109976286780105414-software-engineering-phd-intern",
+    "application_url": "https://careers.google.com/jobs/results/109976286780105414-software-engineering-phd-intern",
+    "deadline": null,
+    "start_date": null,
+    "location": "Bengaluru, Karnataka, India; Hyderabad, Telangana, India; Pune, Maharashtra, India",
+    "remote": null,
+    "eligibility": [],
+    "required_skills": [],
+    "fields": [
+      "Software Engineering",
+      "Computer Science"
+    ],
+    "degree_requirements": [
+      "PhD"
+    ],
+    "year_requirements": [],
+    "stipend": "paid",
+    "prize_money": null,
+    "source": "careers.google.com",
+    "confidence": 0.9,
+    "evidence": [
+      "Software Engineering PhD Intern, Summer 2027",
+      "corporate_fareGoogle",
+      "Join us for a 12+ week paid internship that offers personal and professional development"
+    ],
+    "deadline_evidence": null
+  },
+  {
+    "title": "Systems Development Engineer Intern – 2027",
+    "type": "internship",
+    "organization": "Amazon",
+    "description": "Systems Development Engineer Intern position at Amazon in India, focusing on computer science fundamentals, programming, and problem solving.",
+    "source_url": "https://www.amazon.jobs/en/jobs/10498161/systems-development-engineer-intern-2027",
+    "application_url": "https://www.amazon.jobs/en/jobs/10498161/systems-development-engineer-intern-2027",
+    "deadline": null,
+    "start_date": null,
+    "location": "Bengaluru, Chennai and Hyderabad, India",
+    "remote": null,
+    "eligibility": [
+      "Are enrolled in a Bachelor's degree",
+      "Bachelor’s Degree in Computer Science/Engineering, or related field at time of application."
+    ],
+    "required_skills": [
+      "Syntactical knowledge in Programming or Scripting languages such as Java, C/C++, Python, etc.",
+      "Knowledge of Computer Science fundamentals such as object-oriented design, Operating systems, Algorithm, design, data structures, and complexity analysis",
+      "Excellent problem solving skills"
+    ],
+    "fields": [
+      "Computer Science",
+      "Engineering"
+    ],
+    "degree_requirements": [
+      "Bachelor's degree"
+    ],
+    "year_requirements": [],
+    "stipend": null,
+    "prize_money": null,
+    "source": "amazon.jobs",
+    "confidence": 0.9,
+    "evidence": [
+      "Are enrolled in a Bachelor's degree",
+      "Bachelor’s Degree in Computer Science/Engineering, or related field at time of application.",
+      "Syntactical knowledge in Programming or Scripting languages such as Java, C/C++, Python, etc.",
+      "Job location-By applying to this position your application will be considered for all locations we hire for in India. This includes but is not limited to Bengaluru, Chennai and Hyderabad."
+    ],
+    "deadline_evidence": null
+  },
+  {
+    "title": "SDE I Intern",
+    "type": "internship",
+    "organization": "Amazon",
+    "description": "Software Development Engineer 6 months Internship – 2027 (In-Person)",
+    "source_url": "https://www.amazon.jobs/en/jobs/10541345/sde-i-intern-amazon-university-talent-acquisition",
+    "application_url": "https://www.amazon.jobs/en/jobs/10541345/sde-i-intern-amazon-university-talent-acquisition",
+    "deadline": null,
+    "start_date": null,
+    "location": "Bengaluru, Chennai, Hyderabad, Delhi, Mumbai and Pune",
+    "remote": false,
+    "eligibility": [
+      "Currently enrolled in a Bachelor’s or Master’s Degree in Computer Science, Computer Engineering, or related field at time of application",
+      "Year of Graduation 2027"
+    ],
+    "required_skills": [
+      "Knowledge of computer science fundamentals such as object-oriented design, operating systems, algorithms, data structures, and complexity analysis",
+      "Knowledge of programming languages such as C/C++, Python, Java or Perl"
+    ],
+    "fields": [
+      "Computer Science",
+      "Computer Engineering"
+    ],
+    "degree_requirements": [
+      "Bachelor's or Master's Degree"
+    ],
+    "year_requirements": [
+      "Year of Graduation 2027"
+    ],
+    "stipend": null,
+    "prize_money": null,
+    "source": "amazon.jobs",
+    "confidence": 0.95,
+    "evidence": [
+      "SDE I Intern , Amazon University Talent Acquisition - Job ID: 10541345",
+      "This includes but is not limited to Bengaluru, Chennai, Hyderabad, Delhi, Mumbai and Pune.",
+      "Software Development Engineer 6 months Internship – 2027 (In-Person)",
+      "Currently enrolled in a Bachelor’s or Master’s Degree in Computer Science, Computer Engineering, or related field at time of application -Year of Graduation 2027"
+    ],
+    "deadline_evidence": null
+  },
+  {
+    "title": "Engineer your future",
+    "type": "internship",
+    "organization": "Texas Instruments",
+    "description": "An engineering workshop where students get an opportunity to interview for a Summer 2027 internship.",
+    "source_url": "https://careers.ti.com/engineer-your-future",
+    "application_url": "https://careers.ti.com/engineer-your-future",
+    "deadline": null,
+    "start_date": null,
+    "location": "Not specified",
+    "remote": null,
+    "eligibility": [
+      "Engineering Your Future students"
+    ],
+    "required_skills": [],
+    "fields": [
+      "Engineering"
+    ],
+    "degree_requirements": [],
+    "year_requirements": [],
+    "stipend": null,
+    "prize_money": null,
+    "source": "careers.ti.com",
+    "confidence": 0.6,
+    "evidence": [
+      "all Engineering Your Future students will get an opportunity at the workshop to interview for a Summer 2027 internship."
+    ],
+    "deadline_evidence": null
+  },
+  {
+    "title": "Programmer Analyst Intern – 2027",
+    "type": "internship",
+    "organization": "Amazon",
+    "description": "Programmer Analyst Intern position at Amazon for students pursuing or having completed a Bachelor's degree.",
+    "source_url": "https://amazon.jobs/en/jobs/10506542/programmer-analyst-intern-2027",
+    "application_url": "https://amazon.jobs/en/jobs/10506542/programmer-analyst-intern-2027",
+    "deadline": null,
+    "start_date": null,
+    "location": "Hyderabad, India",
+    "remote": null,
+    "eligibility": [
+      "Are enrolled in or have completed a Bachelor's degree",
+      "Currently working towards a Bachelor degree or higher in Computer Science, Engineering or equivalent"
+    ],
+    "required_skills": [
+      "Data Structures",
+      "Algorithms",
+      "Problem Solving",
+      "Coding",
+      "Java",
+      "C++",
+      "C#",
+      "SQL",
+      "Perl",
+      "Python",
+      "XML",
+      "Ruby"
+    ],
+    "fields": [
+      "Computer Science",
+      "Engineering"
+    ],
+    "degree_requirements": [
+      "Bachelor's degree or higher"
+    ],
+    "year_requirements": [],
+    "stipend": null,
+    "prize_money": null,
+    "source": "amazon.jobs",
+    "confidence": 0.9,
+    "evidence": [
+      "Programmer Analyst Intern – 2027",
+      "Job location-By applying to this position your application will be considered for all locations we hire for in India. This includes but is not limited to Hyderabad.",
+      "Are enrolled in or have completed a Bachelor's degree",
+      "Currently working towards a Bachelor degree or higher in Computer Science, Engineering or equivalent."
+    ],
+    "deadline_evidence": null
+  },
+  {
+    "title": "Software Developer, 2027 Leadership Development Program, ION Group, India",
+    "type": "job",
+    "organization": "ION Group",
+    "description": "Software Developer role in the 2027 Leadership Development Program at ION Group in India, involving design, development, and maintenance of robust software solutions as part of an Agile team.",
+    "source_url": "https://jobs.lever.co/ion/6f66cbb4-c882-4234-b84e-68baea56e1ea",
+    "application_url": "https://jobs.lever.co/ion/6f66cbb4-c882-4234-b84e-68baea56e1ea",
+    "deadline": null,
+    "start_date": null,
+    "location": "Noida / Mumbai / Pune",
+    "remote": false,
+    "eligibility": [
+      "Graduates"
+    ],
+    "required_skills": [
+      "strong problem-solving abilities",
+      "excellent communication skills",
+      "adaptability"
+    ],
+    "fields": [
+      "Software Development"
+    ],
+    "degree_requirements": [],
+    "year_requirements": [],
+    "stipend": null,
+    "prize_money": null,
+    "source": "jobs.lever.co",
+    "confidence": 0.9,
+    "evidence": [
+      "Software Developer, 2027 Leadership Development Program, ION Group, India",
+      "Noida / Mumbai / Pune",
+      "Graduates – Leadership Development Program /",
+      "Full-time /",
+      "On-site"
+    ],
+    "deadline_evidence": null
   }
 ]
