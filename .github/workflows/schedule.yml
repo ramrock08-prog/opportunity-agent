@@ -19,7 +19,7 @@ on:
       limit:
         description: Maximum Gemini extractions (1-10)
         required: true
-        default: "3"
+        default: "8"
         type: string
   schedule:
     # Daily at 06:00 UTC. Keep this small to control API costs.
@@ -64,9 +64,14 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
         run: |
+          if [ -z "$GEMINI_API_KEY" ] || [ -z "$TAVILY_API_KEY" ]; then
+            echo "::warning::Discovery secrets are not configured; skipping."
+            exit 0
+          fi
+
           python run_agent.py \
             --category "${{ inputs.category || 'internship' }}" \
-            --limit "${{ inputs.limit || '3' }}"
+            --limit "${{ inputs.limit || '8' }}"
 
       - name: Export a portable JSON snapshot
         run: |
