@@ -393,5 +393,43 @@
       "On-site"
     ],
     "deadline_evidence": null
+  },
+  {
+    "title": "Silicon Engineering Intern, PhD, Summer 2027",
+    "type": "internship",
+    "organization": "Google",
+    "description": "Silicon Engineering Intern, PhD, Summer 2027 position at Google.",
+    "source_url": "https://careers.google.com/jobs/results/109375266236572358-silicon-engineering-intern",
+    "application_url": "https://careers.google.com/jobs/results/109375266236572358-silicon-engineering-intern",
+    "deadline": "2027-04-30",
+    "start_date": null,
+    "location": "Bengaluru, Karnataka, India; Hyderabad, Telangana, India",
+    "remote": null,
+    "eligibility": [
+      "Currently attending a degree program in India and available to work full time for 12 weeks outside of university term time."
+    ],
+    "required_skills": [
+      "C++",
+      "Python",
+      "performance modeling tools",
+      "silicon design tools in front end/design verification/physical design"
+    ],
+    "fields": [
+      "Silicon Engineering"
+    ],
+    "degree_requirements": [
+      "PhD"
+    ],
+    "year_requirements": [],
+    "stipend": null,
+    "prize_money": null,
+    "source": "careers.google.com",
+    "confidence": 0.9,
+    "evidence": [
+      "Silicon Engineering Intern, PhD, Summer 2027",
+      "Please complete your application before April 30, 2027.",
+      "Currently attending a degree program in India and available to work full time for 12 weeks outside of university term time."
+    ],
+    "deadline_evidence": "Please complete your application before April 30, 2027."
   }
 ]
