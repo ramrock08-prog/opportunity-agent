@@ -431,5 +431,36 @@
       "Currently attending a degree program in India and available to work full time for 12 weeks outside of university term time."
     ],
     "deadline_evidence": "Please complete your application before April 30, 2027."
+  },
+  {
+    "title": "Silicon Engineering Intern, 2027",
+    "type": "internship",
+    "organization": "Google",
+    "description": "Silicon Engineering Intern opportunity at Google to collaborate with architects, implementation designers, verification engineers, and software engineers.",
+    "source_url": "https://careers.google.com/jobs/results/94500213674123974-silicon-engineering-intern",
+    "application_url": "https://careers.google.com/jobs/results/94500213674123974-silicon-engineering-intern",
+    "deadline": null,
+    "start_date": null,
+    "location": "Texas, USA",
+    "remote": true,
+    "eligibility": [
+      "English proficiency is a requirement for all roles unless stated otherwise in the job posting"
+    ],
+    "required_skills": [],
+    "fields": [
+      "Silicon Engineering"
+    ],
+    "degree_requirements": [],
+    "year_requirements": [],
+    "stipend": null,
+    "prize_money": null,
+    "source": "careers.google.com",
+    "confidence": 0.9,
+    "evidence": [
+      "Silicon Engineering Intern, 2027",
+      "Texas, USA | Remote eligible",
+      "Google"
+    ],
+    "deadline_evidence": null
   }
 ]
