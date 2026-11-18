@@ -312,47 +312,38 @@
     "title": "Programmer Analyst Intern – 2027",
     "type": "internship",
     "organization": "Amazon",
-    "description": "Programmer Analyst Intern position at Amazon for students pursuing or having completed a Bachelor's degree.",
+    "description": "Programmer Analyst Intern position at Amazon working with teams to create milestones, participate in daily scrums, support platform migrations, write code and unit tests, and act as a liaison between business and technical stakeholders.",
     "source_url": "https://amazon.jobs/en/jobs/10506542/programmer-analyst-intern-2027",
     "application_url": "https://amazon.jobs/en/jobs/10506542/programmer-analyst-intern-2027",
     "deadline": null,
     "start_date": null,
-    "location": "Hyderabad, India",
+    "location": "India",
     "remote": null,
     "eligibility": [
-      "Are enrolled in or have completed a Bachelor's degree",
-      "Currently working towards a Bachelor degree or higher in Computer Science, Engineering or equivalent"
+      "Currently working towards a Bachelor degree or higher in Computer Science, Engineering or equivalent."
     ],
     "required_skills": [
-      "Data Structures",
-      "Algorithms",
-      "Problem Solving",
-      "Coding",
-      "Java",
-      "C++",
-      "C#",
-      "SQL",
-      "Perl",
-      "Python",
-      "XML",
-      "Ruby"
+      "CS Fundamentals – Data Structures, Algo, Problem Solving, and Coding",
+      "Ability to write clean code for basic data structures problems and algorithms in any one programming or scripting language",
+      "Proficient in at least one programming language Java (preferred), C++ ,or C# (or) scripting language such as SQL, Perl, Python, XML, or Ruby",
+      "Experience building software applications through internships, course projects, hackathons or personal projects",
+      "Ability to read and interpret complex code, debug and troubleshoot application level issues (or) issues with internal tools with minimal guidance"
     ],
     "fields": [
       "Computer Science",
       "Engineering"
     ],
     "degree_requirements": [
-      "Bachelor's degree or higher"
+      "Bachelor degree or higher"
     ],
     "year_requirements": [],
     "stipend": null,
     "prize_money": null,
     "source": "amazon.jobs",
-    "confidence": 0.9,
+    "confidence": 0.95,
     "evidence": [
       "Programmer Analyst Intern – 2027",
-      "Job location-By applying to this position your application will be considered for all locations we hire for in India. This includes but is not limited to Hyderabad.",
-      "Are enrolled in or have completed a Bachelor's degree",
+      "Job location-By applying to this position your application will be considered for all locations we hire for in India.",
       "Currently working towards a Bachelor degree or higher in Computer Science, Engineering or equivalent."
     ],
     "deadline_evidence": null
@@ -460,6 +451,94 @@
       "Silicon Engineering Intern, 2027",
       "Texas, USA | Remote eligible",
       "Google"
+    ],
+    "deadline_evidence": null
+  },
+  {
+    "title": "NVIDIA 2027 Internships: Deep Learning Computer Architecture",
+    "type": "internship",
+    "organization": "NVIDIA",
+    "description": "A 12-week full-time internship working on projects that have a measurable impact on the business, focusing on Deep Learning Computer Architecture.",
+    "source_url": "https://jobs.nvidia.com/careers/job/893397026185",
+    "application_url": "https://jobs.nvidia.com/careers/job/893397026185",
+    "deadline": null,
+    "start_date": null,
+    "location": "India, Bengaluru",
+    "remote": null,
+    "eligibility": [
+      "students"
+    ],
+    "required_skills": [],
+    "fields": [
+      "Deep Learning Computer Architecture"
+    ],
+    "degree_requirements": [],
+    "year_requirements": [],
+    "stipend": null,
+    "prize_money": null,
+    "source": "jobs.nvidia.com",
+    "confidence": 0.9,
+    "evidence": [
+      "NVIDIA 2027 Internships: Deep Learning Computer Architecture",
+      "Throughout the 12-week full-time internship, students will work on projects that have a measurable impact on our business.",
+      "India, Bengaluru + 1"
+    ],
+    "deadline_evidence": null
+  },
+  {
+    "title": "ASIC Design and Verification Intern, SOC - 2027",
+    "type": "internship",
+    "organization": "NVIDIA",
+    "description": "The NVIDIA SOC group is looking for ASIC Design and Verification Interns - Summer 2027.",
+    "source_url": "https://jobs.nvidia.com/careers/job/893397572374?domain=nvidia.com&hl=zh-TW",
+    "application_url": "https://jobs.nvidia.com/careers/job/893397572374?domain=nvidia.com&hl=zh-TW",
+    "deadline": null,
+    "start_date": null,
+    "location": "India, Bengaluru",
+    "remote": null,
+    "eligibility": [],
+    "required_skills": [],
+    "fields": [
+      "ASIC Design",
+      "Verification"
+    ],
+    "degree_requirements": [],
+    "year_requirements": [],
+    "stipend": null,
+    "prize_money": null,
+    "source": "jobs.nvidia.com",
+    "confidence": 0.8,
+    "evidence": [
+      "The NVIDIA SOC group is looking for ASIC Design and Verification Interns - Summer 2027. India, Bengaluru + 1 more"
+    ],
+    "deadline_evidence": null
+  },
+  {
+    "title": "Robotics Simulation and Evaluation PhD Intern - Summer 2027",
+    "type": "internship",
+    "organization": "NVIDIA",
+    "description": "Robotics Simulation and Evaluation PhD Intern - Summer 2027 position at NVIDIA.",
+    "source_url": "https://jobs.nvidia.com/careers/job/893397112871?ncid=no-ncid",
+    "application_url": "https://jobs.nvidia.com/careers/job/893397112871?ncid=no-ncid",
+    "deadline": null,
+    "start_date": null,
+    "location": "Not specified",
+    "remote": null,
+    "eligibility": [],
+    "required_skills": [],
+    "fields": [
+      "Robotics"
+    ],
+    "degree_requirements": [
+      "PhD"
+    ],
+    "year_requirements": [],
+    "stipend": null,
+    "prize_money": null,
+    "source": "jobs.nvidia.com",
+    "confidence": 0.9,
+    "evidence": [
+      "Robotics Simulation and Evaluation PhD Intern - Summer 2027"
     ],
     "deadline_evidence": null
   }
