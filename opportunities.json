@@ -541,5 +541,95 @@
       "Robotics Simulation and Evaluation PhD Intern - Summer 2027"
     ],
     "deadline_evidence": null
+  },
+  {
+    "title": "Product Design Engineering Intern, 2027 — Google Careers",
+    "type": "internship",
+    "organization": "Google",
+    "description": "Product Design Engineering Intern position at Google for the 2027 summer.",
+    "source_url": "https://careers.google.com/jobs/results/136501832733074118-product-design-engineering-intern",
+    "application_url": "https://careers.google.com/jobs/results/136501832733074118-product-design-engineering-intern",
+    "deadline": "2026-12-15",
+    "start_date": null,
+    "location": "Not specified",
+    "remote": null,
+    "eligibility": [
+      "available to work full-time for 10-12 weeks during 2027 summer",
+      "English proficiency is a requirement",
+      "In their penultimate academic year and returning to a degree program after completion of the internship"
+    ],
+    "required_skills": [
+      "thermal modeling, simulation, testing of air and liquid cooling systems",
+      "mechanical or structural for consumer electronics, with proficiency in developing automation scripts for lab instrumentation and data acquisition",
+      "advanced characterization protocols, foundational knowledge of material properties, with an emphasis on surface coatings and PVD technologies"
+    ],
+    "fields": [
+      "Material Science",
+      "Mechanical Engineering",
+      "Chemical Engineering",
+      "Chemistry",
+      "Physics",
+      "Mathematics",
+      "Biomedical Engineering"
+    ],
+    "degree_requirements": [
+      "Currently pursuing a Master’s degree in Material Science, Mechanical Engineering, Chemical Engineering, Chemistry, Physics, Mathematics, Biomedical Engineering."
+    ],
+    "year_requirements": [
+      "penultimate academic year"
+    ],
+    "stipend": null,
+    "prize_money": null,
+    "source": "careers.google.com",
+    "confidence": 0.9,
+    "evidence": [
+      "To be eligible for this program, candidates must be available to work full-time for 10-12 weeks during 2027 summer.",
+      "The anticipated application window is open until December 15th, but may close earlier if all available projects are full.",
+      "English proficiency is a requirement for this internship program.",
+      "Currently pursuing a Master’s degree in Material Science, Mechanical Engineering, Chemical Engineering, Chemistry, Physics, Mathematics, Biomedical Engineering.",
+      "In their penultimate academic year and returning to a degree program after completion of the internship."
+    ],
+    "deadline_evidence": "The anticipated application window is open until December 15th, but may close earlier if all available projects are full."
+  },
+  {
+    "title": "Software Engineering Intern, Summer 2027",
+    "type": "internship",
+    "organization": "Google",
+    "description": "Software Engineering Intern, Summer 2027 position at Google.",
+    "source_url": "https://careers.google.com/jobs/results/95046224276529862-software-engineering-intern",
+    "application_url": "https://careers.google.com/jobs/results/95046224276529862-software-engineering-intern",
+    "deadline": null,
+    "start_date": null,
+    "location": "Not specified",
+    "remote": null,
+    "eligibility": [
+      "Currently enrolled in Bachelor's, Master's degree program in Computer Science or a related technical field.",
+      "Penultimate academic year of the Bachelor’s or Master’s degree.",
+      "Experience in software development and coding in at least one general purpose programming language (e.g., Java, C, C++, Python, JavaScript, C#, Go, etc.)."
+    ],
+    "required_skills": [
+      "Software development and coding in at least one general purpose programming language (e.g., Java, C, C++, Python, JavaScript, C#, Go, etc.)"
+    ],
+    "fields": [
+      "Computer Science"
+    ],
+    "degree_requirements": [
+      "Bachelor's",
+      "Master's degree"
+    ],
+    "year_requirements": [
+      "Penultimate academic year of the Bachelor’s or Master’s degree"
+    ],
+    "stipend": null,
+    "prize_money": null,
+    "source": "careers.google.com",
+    "confidence": 0.8,
+    "evidence": [
+      "Software Engineering Intern, Summer 2027 — Google Careers",
+      "Currently enrolled in Bachelor's, Master's degree program in Computer Science or a related technical field.",
+      "Penultimate academic year of the Bachelor’s or Master’s degree.",
+      "Experience in software development and coding in at least one general purpose programming language (e.g., Java, C, C++, Python, JavaScript, C#, Go, etc.)."
+    ],
+    "deadline_evidence": null
   }
 ]
