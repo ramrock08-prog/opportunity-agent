@@ -7,7 +7,8 @@
 
 Repository: <https://github.com/ramrock08-prog/opportunity-agent>  
 Live demo: <https://opportunity-agent-v39s.onrender.com>  
-CI: [all backend, frontend, and PostgreSQL jobs passing](https://github.com/ramrock08-prog/opportunity-agent/actions)
+CI: [all backend, frontend, and PostgreSQL jobs passing](https://github.com/ramrock08-prog/opportunity-agent/actions)  
+Last updated: **21 November 2026**
 
 Opportunity Agent searches the web for internships, hackathons, jobs,
 scholarships, fellowships, competitions, and research programs; extracts
@@ -52,7 +53,8 @@ preserved and generalized in Opportunity Agent.
 
 ### Web application
 - Responsive React dashboard with dark sidebar.
-- Search, category filters, and advanced work-mode/deadline/skills filters.
+- Search, category filters, and advanced work-mode / deadline / skills /
+  location filters.
 - Personalized "For you" ranking with transparent reasons.
 - Save/unsave opportunities with persistent per-user bookmarks.
 - Application tracker with interested/applied/interview/offer/rejected
@@ -482,7 +484,8 @@ These are documented intentionally rather than hidden.
 - **Host:** Render Docker web service (free instance)
 - **Database:** Render PostgreSQL (free instance, Oregon)
 - **CI:** GitHub Actions (backend tests, frontend lint/build, PostgreSQL tests)
-- **Current feed:** 194 internships, 3 jobs, 1 scholarship, 1 fellowship
+- **Current feed:** 193 internships, 3 jobs, 1 scholarship, 1 fellowship
+  (198 total)
 
 The public demo intentionally runs with `AUTH_REQUIRE_VERIFIED=0` so
 visitors can create an account without needing an SMTP mailbox. Email
@@ -534,8 +537,35 @@ Always verify on the official page before applying.
 
 ---
 
+## Documentation maintenance rule
+
+This README is part of the definition of done. Every change that affects
+features, setup, APIs, tests, deployment, or the live feed **must** update:
+
+1. `README.md` (features, commands, counts, limitations)
+2. `docs/CHANGELOG.md` (what changed and when)
+3. `docs/ARCHITECTURE.md` and `docs/PRODUCT.md` when behavior changes
+
+See [`AGENTS.md`](AGENTS.md) for the short checklist. The goal is that the
+README always describes the current project, not an older version.
+
+---
+
+## Changelog
+
+See [`docs/CHANGELOG.md`](docs/CHANGELOG.md). Recent highlights:
+
+- **21 Nov 2026** — curated internship import (17,000+ listings), one-click
+  Apply panel with saved contact details, location filter, application
+  tracker, skill match/gaps, similar opportunities, keep-alive workflow.
+- **15 Nov 2026** — deep profile-aware discovery, resume onboarding,
+  advanced filters, closing-deadline radar.
+- **14 Nov 2026** — public Render deployment with PostgreSQL, JWT accounts,
+  email verification/reset, rate limits, and CI.
+
+---
+
 ## License
 
-MIT. See [`LICENSE`](LICENSE). The original drone-scout project is also
-MIT-licensed; the legacy `agent.py` is retained for history rather than
-used by the web application.
+MIT. See [`LICENSE`](LICENSE). The legacy `agent.py` is retained in this
+repository for history and is not used by the web application.
