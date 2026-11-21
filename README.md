@@ -68,7 +68,9 @@ preserved and generalized in Opportunity Agent.
 - One-click **Apply** flow that saves contact details to the profile and
   opens the official application with the details ready to paste.
 - **Curated internship import** from open-source listing datasets
-  (17,000+ listings) filtered for India/remote and profile relevance.
+  (17,000+ listings) filtered for India/remote, undergraduate
+  (Bachelor's) eligibility, and profile relevance, with Summer 2027
+  internships prioritized for 3rd-year students graduating in 2028.
 - Opportunity detail drawer with eligibility, skills, stipend, evidence,
   source/application links, and a manual link check.
 - First-run profile onboarding for new accounts.
@@ -102,7 +104,7 @@ preserved and generalized in Opportunity Agent.
 - Verification and reset emails through Gmail SMTP.
 - GitHub Actions scheduled discovery with JSON snapshot persistence.
 - Docker multi-stage build; Render blueprint included.
-- 97 SQLite tests + 4 PostgreSQL integration tests, plus two Playwright
+- 98 SQLite tests + 4 PostgreSQL integration tests, plus two Playwright
   browser flows.
 
 ---
@@ -312,9 +314,9 @@ when authentication is enabled.
 .\.venv\Scripts\python.exe -m pytest
 ```
 
-Current result: **97 passed, 4 skipped** with SQLite (PostgreSQL tests
+Current result: **98 passed, 4 skipped** with SQLite (PostgreSQL tests
 are skipped unless a database is configured). With the local PostgreSQL
-server enabled: **101 passed**.
+server enabled: **102 passed**.
 
 ```powershell
 # Starts a temporary PostgreSQL server with pgserver and runs the 3
@@ -397,7 +399,7 @@ resume.py               PDF/DOCX/TXT resume text extraction
 ├── run_agent.py            Discovery pipeline CLI
 ├── notify.py               HTML email digest
 ├── agent.py                Legacy original drone scout (kept for history)
-├── tests/                  97 SQLite tests + 4 PostgreSQL tests
+├── tests/                  98 SQLite tests + 4 PostgreSQL tests
 ├── scripts/
 │   ├── e2e_bookmarks.py    Playwright bookmark/details flow
 │   ├── e2e_auth.py         Playwright auth flow
@@ -486,7 +488,7 @@ These are documented intentionally rather than hidden.
 - **Host:** Render Docker web service (free instance)
 - **Database:** Render PostgreSQL (free instance, Oregon)
 - **CI:** GitHub Actions (backend tests, frontend lint/build, PostgreSQL tests)
-- **Current feed:** 193 internships, 3 jobs, 1 scholarship, 1 fellowship
+- **Current feed:** 168 internships, 3 jobs, 1 scholarship, 1 fellowship
   (198 total)
 
 The public demo intentionally runs with `AUTH_REQUIRE_VERIFIED=0` so

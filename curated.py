@@ -53,6 +53,15 @@ COUNTRY_TOKENS = {
     "remote": ["remote"],
 }
 
+NEGATIVE_TITLE_TERMS = {
+    "mba",
+    "phd",
+    "doctorate",
+    "sales",
+    "marketing",
+    "human resources",
+}
+
 STALE_TERMS = {
     "summer 2026",
     "spring 2026",
@@ -157,6 +166,67 @@ def _location_matches(locations: list[str], country: str) -> bool:
     return any(token in text for token in tokens)
 
 
+def _is_undergraduate(profile) -> bool:
+    if profile is None:
+        return False
+
+    degree = str(getattr(profile, "degree", "") or "").lower()
+    year = getattr(profile, "year_of_study", None)
+
+    return (
+        "b.tech" in degree
+        or "b.e" in degree
+        or "bachelor" in degree
+        or (isinstance(year, int) and 1 <= year <= 4)
+    )
+
+
+def _student_level_matches(item: dict, profile) -> bool:
+    """Keep roles a 3rd-year Bachelor's student can apply to."""
+    if not _is_undergraduate(profile):
+        return True
+
+    title = item["title"].lower()
+
+    if any(term in title for term in NEGATIVE_TITLE_TERMS):
+        return False
+
+    degrees = [degree.lower() for degree in item["degrees"]]
+
+    if not degrees:
+        return True
+
+    if any(
+        "bachelor" in degree
+        or "undergrad" in degree
+        or "associate" in degree
+        or "b.tech" in degree
+        for degree in degrees
+    ):
+        return True
+
+    return False
+
+
+def _term_priority(terms: list[str]) -> int:
+    """Rank the internship cycle for a 2028 graduate."""
+    text = " ".join(terms).lower()
+
+    if "summer 2027" in text:
+        return 3
+
+    if any(
+        cycle in text
+        for cycle in ("fall 2026", "winter 2027", "spring 2027")
+    ):
+        return 2
+
+    if "summer" in text:
+        return 1
+
+    return 0
+
+
 def _profile_terms(profile) -> list[str]:
     if profile is None:
         return []
@@ -188,10 +258,12 @@ def select_listings(
         item for item in listings
         if _is_fresh(item["terms"])
         and _location_matches(item["locations"], country)
+        and _student_level_matches(item, profile)
     ]
 
     selected.sort(
         key=lambda item: (
+            _term_priority(item["terms"]),
             _relevance(item, terms),
             item["category"].lower() in RELEVANT_CATEGORIES,
             item["date_posted"],

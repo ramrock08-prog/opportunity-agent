@@ -19,7 +19,7 @@ SAMPLE = [
         "url": "https://example.com/ml-intern",
         "locations": ["Remote"],
         "terms": ["Fall 2026"],
-        "degrees": ["Master's"],
+        "degrees": ["Bachelor's", "Master's"],
         "category": "AI/ML/Data",
         "sponsorship": "Offers Sponsorship",
         "date_posted": 100,
@@ -53,6 +53,10 @@ SAMPLE = [
 
 
 class Profile:
+    degree = "B.Tech"
+    branch = "ECE"
+    year_of_study = 3
+    graduation_year = 2028
     skills = ["Python", "Machine Learning"]
     interests = ["Software Engineering"]
     preferred_locations = ["India"]
@@ -71,6 +75,43 @@ def test_select_listings_filters_and_orders():
     assert "Machine Learning Intern" in titles
     # Both match profile terms; the software role is newer.
     assert titles[0] == "Software Engineering Intern"
+
+
+def test_masters_and_mba_roles_are_excluded_for_undergrads():
+    listings = SAMPLE + [
+        {
+            "title": "Graduate Research Intern",
+            "company": "Masters Only Corp",
+            "url": "https://example.com/masters",
+            "locations": ["Remote"],
+            "terms": ["Summer 2027"],
+            "degrees": ["Master's"],
+            "category": "AI/ML/Data",
+            "sponsorship": "",
+            "date_posted": 500,
+            "source": "TestSource",
+        },
+        {
+            "title": "Product Management MBA Intern",
+            "company": "MBA Corp",
+            "url": "https://example.com/mba",
+            "locations": ["Remote"],
+            "terms": ["Summer 2027"],
+            "degrees": ["MBA"],
+            "category": "Product",
+            "sponsorship": "",
+            "date_posted": 600,
+            "source": "TestSource",
+        },
+    ]
+
+    selected = curated.select_listings(
+        listings, profile=Profile(), country="India", limit=10
+    )
+    urls = [item["url"] for item in selected]
+
+    assert "https://example.com/masters" not in urls
+    assert "https://example.com/mba" not in urls
 
 
 def test_build_opportunity_maps_fields():

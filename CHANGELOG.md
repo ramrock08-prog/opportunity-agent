@@ -29,6 +29,12 @@ and this changelog are updated together for every change.
 
 - Updated the live profile for a 2028 graduate: graduation year `2028`,
   16 interests, and 8 preferred locations (India + remote cities).
+- Curated import now filters for **undergraduate (Bachelor's) eligibility**
+  and prioritizes **Summer 2027** internships, the correct cycle for a
+  3rd-year / 5th-semester student graduating in 2028. Master's/PhD/MBA-only
+  roles are excluded.
+- Re-imported the live curated set: **173 records** (168 internships,
+  3 jobs, 1 scholarship, 1 fellowship).
 - Confirmed no `Summer2028` open-source datasets exist yet, so the
   curated import stays on the 2027 sources.
 
