@@ -631,5 +631,45 @@
       "Experience in software development and coding in at least one general purpose programming language (e.g., Java, C, C++, Python, JavaScript, C#, Go, etc.)."
     ],
     "deadline_evidence": null
+  },
+  {
+    "title": "MBA Intern, 2027",
+    "type": "internship",
+    "organization": "Google",
+    "description": "Internships for MBA and other business-focused graduate students are 10-12 weeks long and are offered in a range of functions across the company.",
+    "source_url": "https://careers.google.com/jobs/results/112188710065185478-mba-intern",
+    "application_url": "https://careers.google.com/jobs/results/112188710065185478-mba-intern",
+    "deadline": null,
+    "start_date": null,
+    "location": "Not specified",
+    "remote": null,
+    "eligibility": [
+      "Google employs MBA and graduate students, globally"
+    ],
+    "required_skills": [],
+    "fields": [
+      "Business Strategy",
+      "Finance",
+      "Marketing",
+      "Operations & Support",
+      "People Operations",
+      "Product Management",
+      "Sales",
+      "Technical Solutions"
+    ],
+    "degree_requirements": [
+      "MBA",
+      "graduate students"
+    ],
+    "year_requirements": [],
+    "stipend": null,
+    "prize_money": null,
+    "source": "careers.google.com",
+    "confidence": 0.8,
+    "evidence": [
+      "MBA Intern, 2027",
+      "Internships for MBA and other business-focused graduate students are 10-12 weeks long and are offered in a range of functions across the company."
+    ],
+    "deadline_evidence": null
   }
 ]
