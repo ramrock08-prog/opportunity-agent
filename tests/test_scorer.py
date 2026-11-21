@@ -48,6 +48,68 @@ def test_relevant_opportunity_scores_higher():
     )
 
 
+def test_ai_ml_interest_matches_machine_learning_title():
+    profile = UserProfile(
+        interests=["AI/ML"],
+        opportunity_types=["internship"],
+    )
+    opportunity = Opportunity(
+        title="Machine Learning Intern",
+        type="internship",
+        description="Work on artificial intelligence models.",
+        source_url="https://example.com/ml",
+        application_url="https://example.com/ml/apply",
+        confidence=0.9,
+    )
+
+    result = score_opportunity(opportunity, profile)
+
+    assert result["components"]["interests"] == 35.0
+
+
+def test_skills_match_listing_text_when_source_lists_none():
+    profile = UserProfile(
+        skills=["Python", "FastAPI", "Docker"],
+        interests=["software development"],
+        opportunity_types=["job"],
+    )
+    opportunity = Opportunity(
+        title="Forward Deployed Engineer",
+        type="job",
+        description=(
+            "Build Python APIs with FastAPI and deploy them with "
+            "Docker for customer-facing systems."
+        ),
+        source_url="https://example.com/fde",
+        application_url="https://example.com/fde/apply",
+        confidence=0.9,
+    )
+
+    result = score_opportunity(opportunity, profile)
+
+    assert result["components"]["skills"] >= 8
+    assert any("skills" in reason.lower() for reason in result["reasons"])
+
+
+def test_india_preference_matches_indian_city():
+    profile = UserProfile(
+        preferred_locations=["India"],
+        opportunity_types=["internship"],
+    )
+    opportunity = Opportunity(
+        title="Software Intern",
+        type="internship",
+        location="Bengaluru, India",
+        source_url="https://example.com/in",
+        application_url="https://example.com/in/apply",
+        confidence=0.9,
+    )
+
+    result = score_opportunity(opportunity, profile)
+
+    assert result["components"]["location"] == 15.0
+
+
 def test_unselected_type_returns_zero():
     profile = UserProfile(opportunity_types=["internship"])
     opportunity = Opportunity(

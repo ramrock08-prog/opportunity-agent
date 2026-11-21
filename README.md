@@ -55,7 +55,9 @@ preserved and generalized in Opportunity Agent.
 - Responsive React dashboard with dark sidebar.
 - Search, category filters, and advanced work-mode / deadline / skills /
   location filters.
-- Personalized "For you" ranking with transparent reasons.
+- Personalized "For you" ranking with transparent reasons, synonym-aware
+  interest matching, and skill matching even when a source omits the
+  required-skills list.
 - Save/unsave opportunities with persistent per-user bookmarks.
 - Application tracker with interested/applied/interview/offer/rejected
   stages and private notes.
@@ -100,7 +102,7 @@ preserved and generalized in Opportunity Agent.
 - Verification and reset emails through Gmail SMTP.
 - GitHub Actions scheduled discovery with JSON snapshot persistence.
 - Docker multi-stage build; Render blueprint included.
-- 94 SQLite tests + 4 PostgreSQL integration tests, plus two Playwright
+- 97 SQLite tests + 4 PostgreSQL integration tests, plus two Playwright
   browser flows.
 
 ---
@@ -310,9 +312,9 @@ when authentication is enabled.
 .\.venv\Scripts\python.exe -m pytest
 ```
 
-Current result: **94 passed, 4 skipped** with SQLite (PostgreSQL tests
+Current result: **97 passed, 4 skipped** with SQLite (PostgreSQL tests
 are skipped unless a database is configured). With the local PostgreSQL
-server enabled: **98 passed**.
+server enabled: **101 passed**.
 
 ```powershell
 # Starts a temporary PostgreSQL server with pgserver and runs the 3
@@ -395,7 +397,7 @@ resume.py               PDF/DOCX/TXT resume text extraction
 ├── run_agent.py            Discovery pipeline CLI
 ├── notify.py               HTML email digest
 ├── agent.py                Legacy original drone scout (kept for history)
-├── tests/                  94 SQLite tests + 4 PostgreSQL tests
+├── tests/                  97 SQLite tests + 4 PostgreSQL tests
 ├── scripts/
 │   ├── e2e_bookmarks.py    Playwright bookmark/details flow
 │   ├── e2e_auth.py         Playwright auth flow

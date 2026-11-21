@@ -25,6 +25,13 @@ and this changelog are updated together for every change.
 - Fixed the scheduled discovery workflow so it skips cleanly without
   secrets, and configured the Gemini/Tavily action secrets.
 
+### Changed (same day)
+- Recommendation scoring now expands synonyms such as `AI/ML` →
+  artificial intelligence / machine learning, matches skills against the
+  listing text when a source omits required skills, and treats
+  `India`/`Remote` preferences more accurately. This raises realistic
+  match scores for AI, software, and forward-deployed engineering roles.
+
 ## 2026-11-15
 
 - Added the **application tracker** (Interested / Applied / Interview /
