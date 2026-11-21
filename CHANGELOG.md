@@ -37,6 +37,9 @@ and this changelog are updated together for every change.
   3 jobs, 1 scholarship, 1 fellowship).
 - Confirmed no `Summer2028` open-source datasets exist yet, so the
   curated import stays on the 2027 sources.
+- Simplified **Apply**: clicking Apply directly opens the official
+  application page and marks the opportunity as applied. The intermediate
+  save-details panel was removed.
 
 ## 2026-11-21
 

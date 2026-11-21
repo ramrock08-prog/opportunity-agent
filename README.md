@@ -65,8 +65,8 @@ preserved and generalized in Opportunity Agent.
 - Closing-within-7-days radar and deadline-aware sorting.
 - Skill-match and skill-gap comparison against the profile.
 - Similar-opportunity suggestions and shareable links.
-- One-click **Apply** flow that saves contact details to the profile and
-  opens the official application with the details ready to paste.
+- One-click **Apply** button that opens the official application page and
+  marks the opportunity as applied in the tracker.
 - **Curated internship import** from open-source listing datasets
   (17,000+ listings) filtered for India/remote, undergraduate
   (Bachelor's) eligibility, and profile relevance, with Summer 2027
