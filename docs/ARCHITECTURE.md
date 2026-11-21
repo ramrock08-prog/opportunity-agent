@@ -193,6 +193,21 @@ database is empty.
 PostgreSQL integration tests run against a real server in CI and through
 `scripts/test_postgres.py` locally.
 
+## Recommendation scoring
+
+`scorer.py` returns a transparent 0–100 relevance score:
+
+- Type (20), interests (35), skills (20), location (15), remote (10),
+  extraction confidence (10), normalized by the components that apply.
+- Interests and skills expand synonyms (`AI/ML` → artificial
+  intelligence / machine learning; `software development` → software
+  engineering).
+- When a source omits required skills, profile skills are matched against
+  the listing title/description, so structured datasets do not unfairly
+  lower a strong profile.
+- `India` matches Indian cities; `Remote` matches remote listings.
+- Scores are relevance estimates, not eligibility decisions.
+
 ## Trust boundaries
 
 | Input | Trust level | Handling |

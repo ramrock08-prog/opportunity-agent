@@ -8,7 +8,7 @@
 Repository: <https://github.com/ramrock08-prog/opportunity-agent>  
 Live demo: <https://opportunity-agent-v39s.onrender.com>  
 CI: [all backend, frontend, and PostgreSQL jobs passing](https://github.com/ramrock08-prog/opportunity-agent/actions)  
-Last updated: **21 November 2026**
+Last updated: **22 November 2026**
 
 Opportunity Agent searches the web for internships, hackathons, jobs,
 scholarships, fellowships, competitions, and research programs; extracts

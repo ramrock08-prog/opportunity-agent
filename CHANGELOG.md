@@ -25,6 +25,15 @@ and this changelog are updated together for every change.
 - Fixed the scheduled discovery workflow so it skips cleanly without
   secrets, and configured the Gemini/Tavily action secrets.
 
+## 2026-11-22
+
+- Updated the live profile for a 2028 graduate: graduation year `2028`,
+  16 interests, and 8 preferred locations (India + remote cities).
+- Confirmed no `Summer2028` open-source datasets exist yet, so the
+  curated import stays on the 2027 sources.
+
+## 2026-11-21
+
 ### Changed (same day)
 - Recommendation scoring now expands synonyms such as `AI/ML` →
   artificial intelligence / machine learning, matches skills against the
