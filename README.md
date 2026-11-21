@@ -543,7 +543,7 @@ This README is part of the definition of done. Every change that affects
 features, setup, APIs, tests, deployment, or the live feed **must** update:
 
 1. `README.md` (features, commands, counts, limitations)
-2. `docs/CHANGELOG.md` (what changed and when)
+2. `CHANGELOG.md` (what changed and when)
 3. `docs/ARCHITECTURE.md` and `docs/PRODUCT.md` when behavior changes
 
 See [`AGENTS.md`](AGENTS.md) for the short checklist. The goal is that the
@@ -553,7 +553,7 @@ README always describes the current project, not an older version.
 
 ## Changelog
 
-See [`docs/CHANGELOG.md`](docs/CHANGELOG.md). Recent highlights:
+See [`CHANGELOG.md`](CHANGELOG.md). Recent highlights:
 
 - **21 Nov 2026** — curated internship import (17,000+ listings), one-click
   Apply panel with saved contact details, location filter, application

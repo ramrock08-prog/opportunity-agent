@@ -14,7 +14,7 @@ A change is not complete until:
    - test counts
    - deployment or live feed
    - known limitations
-2. **`docs/CHANGELOG.md` is updated** with a dated bullet.
+2. **`CHANGELOG.md` is updated** with a dated bullet.
 3. **`docs/ARCHITECTURE.md`** is updated when data flow, schema, auth,
    discovery, or infrastructure changes.
 4. **`docs/PRODUCT.md`** is updated when product features or the
