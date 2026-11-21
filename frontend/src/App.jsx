@@ -49,6 +49,7 @@ function App() {
   const [deadlineWindow, setDeadlineWindow] = useState("any");
   const [paidOnly, setPaidOnly] = useState(false);
   const [skillMatchOnly, setSkillMatchOnly] = useState(false);
+  const [locationFilter, setLocationFilter] = useState("");
 
   // Dashboard state
   const [activeCategory, setActiveCategory] = useState("all");
@@ -642,6 +643,14 @@ function App() {
       });
     }
 
+    if (locationFilter.trim()) {
+      const wanted = locationFilter.trim().toLowerCase();
+
+      results = results.filter((item) =>
+        (item.location || "").toLowerCase().includes(wanted)
+      );
+    }
+
     if (paidOnly) {
       results = results.filter(
         (item) => item.stipend || item.prize_money
@@ -729,6 +738,7 @@ function App() {
     deadlineWindow,
     paidOnly,
     skillMatchOnly,
+    locationFilter,
     profileSkills,
   ]);
 
@@ -754,6 +764,7 @@ function App() {
     deadlineWindow !== "any",
     paidOnly,
     skillMatchOnly,
+    locationFilter.trim() !== "",
   ].filter(Boolean).length;
 
   const profileIncomplete = Boolean(
@@ -1188,6 +1199,7 @@ function App() {
                 setDeadlineWindow("any");
                 setPaidOnly(false);
                 setSkillMatchOnly(false);
+                setLocationFilter("");
               }}
             >
               Clear filters
@@ -1224,6 +1236,18 @@ function App() {
                   <option value="30">Closing within 30 days</option>
                   <option value="none">No deadline listed</option>
                 </select>
+              </label>
+
+              <label>
+                Location contains
+                <input
+                  type="search"
+                  value={locationFilter}
+                  onChange={(event) =>
+                    setLocationFilter(event.target.value)
+                  }
+                  placeholder="India, Bengaluru, Remote"
+                />
               </label>
 
               <label className="filter-check">

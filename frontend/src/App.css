@@ -2598,3 +2598,14 @@
     grid-template-columns: 1fr;
   }
 }
+
+.filter-panel input[type="search"] {
+  padding: 9px 11px;
+  border: 1px solid #e1e6f0;
+  border-radius: 8px;
+  background: #fff;
+  color: #47546b;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: none;
+}

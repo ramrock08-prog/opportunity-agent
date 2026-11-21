@@ -482,7 +482,7 @@ These are documented intentionally rather than hidden.
 - **Host:** Render Docker web service (free instance)
 - **Database:** Render PostgreSQL (free instance, Oregon)
 - **CI:** GitHub Actions (backend tests, frontend lint/build, PostgreSQL tests)
-- **Current feed:** 24 internships, 3 jobs, 1 scholarship, 1 fellowship
+- **Current feed:** 194 internships, 3 jobs, 1 scholarship, 1 fellowship
 
 The public demo intentionally runs with `AUTH_REQUIRE_VERIFIED=0` so
 visitors can create an account without needing an SMTP mailbox. Email
