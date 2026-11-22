@@ -92,6 +92,12 @@ export default function OpportunityCard({
           <button
             className="apply-button"
             onClick={() => onApply(item)}
+            disabled={!applyUrl}
+            title={
+              applyUrl
+                ? "Open the official application page"
+                : "No application link available"
+            }
             aria-label={`Apply to ${item.title}`}
           >
             Apply

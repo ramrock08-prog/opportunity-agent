@@ -47,6 +47,12 @@ function App() {
   const [paidOnly, setPaidOnly] = useState(false);
   const [skillMatchOnly, setSkillMatchOnly] = useState(false);
   const [locationFilter, setLocationFilter] = useState("");
+  const [applicationFilter, setApplicationFilter] = useState("all");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [pagination, setPagination] = useState({
+    key: "",
+    count: 24,
+  });
 
   // Dashboard state
   const [activeCategory, setActiveCategory] = useState("all");
@@ -401,11 +407,15 @@ function App() {
   function handleApplyNow(item) {
     const url = item?.application_url || item?.source_url;
 
-    handleApplicationStatus(item, "applied");
-
-    if (url) {
-      window.open(url, "_blank", "noopener,noreferrer");
+    if (!url) {
+      setApplicationMessage(
+        "This opportunity has no application link."
+      );
+      return;
     }
+
+    handleApplicationStatus(item, "applied");
+    window.open(url, "_blank", "noopener,noreferrer");
   }
 
   function retryConnection() {
@@ -507,6 +517,17 @@ function App() {
     [applications]
   );
 
+  const applicationNoteByUrl = useMemo(
+    () =>
+      new Map(
+        applications.map((item) => [
+          item.source_url,
+          item.note || "",
+        ])
+      ),
+    [applications]
+  );
+
   const relatedOpportunities = useMemo(() => {
     if (!detailItem) return [];
 
@@ -579,6 +600,13 @@ function App() {
       results = results.filter((item) =>
         trackedByUrl.has(item.source_url)
       );
+
+      if (applicationFilter !== "all") {
+        results = results.filter(
+          (item) =>
+            trackedByUrl.get(item.source_url) === applicationFilter
+        );
+      }
     }
 
     if (workMode !== "any") {
@@ -701,6 +729,7 @@ function App() {
     skillMatchOnly,
     locationFilter,
     profileSkills,
+    applicationFilter,
   ]);
 
   const categoryCount = new Set(
@@ -727,6 +756,78 @@ function App() {
     skillMatchOnly,
     locationFilter.trim() !== "",
   ].filter(Boolean).length;
+
+  const filterKey = [
+    activeView,
+    activeCategory,
+    searchText,
+    sortMode,
+    workMode,
+    deadlineWindow,
+    paidOnly,
+    skillMatchOnly,
+    locationFilter,
+    applicationFilter,
+  ].join("|");
+
+  const visibleCount = Math.max(
+    24,
+    pagination.key === filterKey ? pagination.count : 24
+  );
+  const pagedOpportunities = visibleOpportunities.slice(
+    0,
+    visibleCount
+  );
+
+  const strengthItems = [
+    ["Degree", Boolean(profile?.degree), 10],
+    ["Branch", Boolean(profile?.branch), 10],
+    ["Year of study", Boolean(profile?.year_of_study), 8],
+    [
+      "Graduation year",
+      Boolean(profile?.graduation_year),
+      8,
+    ],
+    [
+      "Skills (5+)",
+      Math.min((profile?.skills || []).length, 8) / 8,
+      20,
+    ],
+    [
+      "Interests (3+)",
+      Math.min((profile?.interests || []).length, 6) / 6,
+      15,
+    ],
+    [
+      "Preferred locations",
+      Math.min(
+        (profile?.preferred_locations || []).length,
+        3
+      ) / 3,
+      8,
+    ],
+    ["Phone", Boolean(profile?.phone), 5],
+    ["College", Boolean(profile?.college), 5],
+    ["GitHub", Boolean(profile?.github), 4],
+    ["LinkedIn", Boolean(profile?.linkedin), 4],
+    ["Portfolio", Boolean(profile?.portfolio), 3],
+  ];
+
+  const profileStrength = profile
+    ? Math.round(
+        strengthItems.reduce(
+          (total, [, value, weight]) =>
+            total + weight * (typeof value === "number" ? value : value ? 1 : 0),
+          0
+        )
+      )
+    : 0;
+
+  const strengthTips = profile
+    ? strengthItems
+        .filter(([, value]) => !value)
+        .map(([label]) => label)
+    : [];
 
   const profileIncomplete = Boolean(
     !loading &&
@@ -767,7 +868,10 @@ function App() {
 
   return (
     <div className="app-shell">
-      <aside className="sidebar">
+      <aside
+        className={`sidebar ${sidebarOpen ? "open" : ""}`}
+        onClickCapture={() => setSidebarOpen(false)}
+      >
         <a className="brand" href="#dashboard">
           <span className="brand-mark">OA</span>
           <span>
@@ -866,7 +970,23 @@ function App() {
       </aside>
 
       <main className="main-content" id="dashboard">
+        {sidebarOpen && (
+          <div
+            className="sidebar-overlay"
+            role="presentation"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
+
         <header className="topbar">
+          <button
+            className="menu-button"
+            onClick={() => setSidebarOpen((open) => !open)}
+            aria-label="Toggle navigation"
+          >
+            ☰
+          </button>
+
           <div className="breadcrumb">
             Workspace <span>/</span>{" "}
             {activeView === "recommended"
@@ -957,6 +1077,39 @@ function App() {
           initiallyOpen={profileIncomplete}
           onSaved={handleProfileSaved}
         />
+
+        {profile && (
+          <section className="profile-strength">
+            <div
+              className={`strength-ring ${
+                profileStrength >= 80
+                  ? "strong"
+                  : profileStrength >= 55
+                    ? "medium"
+                    : "weak"
+              }`}
+            >
+              {profileStrength}%
+            </div>
+
+            <div className="strength-copy">
+              <div className="section-kicker">PROFILE STRENGTH</div>
+              <h3>Improve your match scores</h3>
+
+              {strengthTips.length ? (
+                <p>
+                  Add or complete:{" "}
+                  <strong>{strengthTips.join(", ")}</strong>.
+                </p>
+              ) : (
+                <p>
+                  Your profile is complete. Strong profiles rank higher
+                  and produce clearer match reasons.
+                </p>
+              )}
+            </div>
+          </section>
+        )}
 
         {error && (
           <div className="error-banner">
@@ -1249,6 +1402,29 @@ function App() {
             ))}
           </div>
 
+          {activeView === "applications" && (
+            <div className="application-filter">
+              {["all", "interested", "applied", "interview", "offer", "rejected"]
+                .filter(
+                  (status) =>
+                    status === "all" || applicationCounts[status]
+                )
+                .map((status) => (
+                  <button
+                    key={status}
+                    className={`category-chip ${
+                      applicationFilter === status ? "active" : ""
+                    }`}
+                    onClick={() => setApplicationFilter(status)}
+                  >
+                    {status === "all"
+                      ? `All (${applications.length})`
+                      : `${status} (${applicationCounts[status]})`}
+                  </button>
+                ))}
+            </div>
+          )}
+
           {activeView === "applications" &&
             applications.length > 0 && (
               <div className="application-summary">
@@ -1307,22 +1483,39 @@ function App() {
               </button>
             </div>
           ) : (
-            <div className="opportunity-grid">
-              {visibleOpportunities.map((item) => (
-                <OpportunityCard
-                  key={`${item.source_url}-${item.title}`}
-                  item={item}
-                  isSaved={bookmarks.includes(item.source_url)}
-                  isBusy={Boolean(bookmarkBusy[item.source_url])}
-                  applicationStatus={applicationStatusByUrl.get(
-                    item.source_url
-                  )}
-                  onBookmark={handleBookmark}
-                  onApply={handleApplyNow}
-                  onOpen={setDetailItem}
-                />
-              ))}
-            </div>
+            <>
+              <div className="opportunity-grid">
+                {pagedOpportunities.map((item) => (
+                  <OpportunityCard
+                    key={`${item.source_url}-${item.title}`}
+                    item={item}
+                    isSaved={bookmarks.includes(item.source_url)}
+                    isBusy={Boolean(bookmarkBusy[item.source_url])}
+                    applicationStatus={applicationStatusByUrl.get(
+                      item.source_url
+                    )}
+                    onBookmark={handleBookmark}
+                    onApply={handleApplyNow}
+                    onOpen={setDetailItem}
+                  />
+                ))}
+              </div>
+
+              {visibleCount < visibleOpportunities.length && (
+                <button
+                  className="load-more"
+                  onClick={() =>
+                    setPagination({
+                      key: filterKey,
+                      count: visibleCount + 24,
+                    })
+                  }
+                >
+                  Show more ({visibleOpportunities.length - visibleCount}{" "}
+                  remaining)
+                </button>
+              )}
+            </>
           )}
         </section>
 
@@ -1354,6 +1547,9 @@ function App() {
           profileSkills={profileSkills}
           related={relatedOpportunities}
           onStatusChange={handleApplicationStatus}
+          applicationNote={applicationNoteByUrl.get(
+            detailItem.source_url
+          )}
           onBookmark={handleBookmark}
           onApply={handleApplyNow}
           onOpen={setDetailItem}

@@ -25,6 +25,27 @@ and this changelog are updated together for every change.
 - Fixed the scheduled discovery workflow so it skips cleanly without
   secrets, and configured the Gemini/Tavily action secrets.
 
+## 2026-11-23
+
+### Fixed
+- Application notes now load back into the detail drawer instead of
+  disappearing after a refresh.
+- Apply is disabled when a listing has no application URL, and the app no
+  longer marks it applied in that case.
+- The mobile layout now has a collapsible sidebar with an overlay instead
+  of a fixed 246px sidebar on small screens.
+- Scheduled discovery now rebases before pushing the snapshot, avoiding
+  non-fast-forward failures.
+
+### Added
+- **Load more** pagination (24 cards at a time) for large result sets.
+- **Profile-strength panel** with a completeness score and suggestions.
+- **Applications status filter** (All / Interested / Applied / Interview /
+  Offer / Rejected).
+- Curated dataset cache (`CURATED_CACHE_HOURS`, default 24) so sync does
+  not re-download 15 MB every time; stale cache is used if the network
+  fails.
+
 ## 2026-11-22
 
 - Updated the live profile for a 2028 graduate: graduation year `2028`,

@@ -6,7 +6,12 @@ maintained listing datasets that contain thousands of internships with
 direct apply links.
 """
 
+import hashlib
+import json
+import os
+import time
 from datetime import datetime, timezone
+from pathlib import Path
 from urllib.parse import urlparse
 
 import requests
@@ -32,6 +37,11 @@ SOURCES = [
         ),
     },
 ]
+
+CACHE_DIR = Path(__file__).resolve().parent / "data" / "curated_cache"
+CACHE_TTL_SECONDS = int(
+    os.getenv("CURATED_CACHE_HOURS", "24")
+) * 3600
 
 COUNTRY_TOKENS = {
     "india": [
@@ -82,7 +92,29 @@ RELEVANT_CATEGORIES = {
 }
 
 
-def _fetch(source: dict) -> list[dict]:
+def _cache_file(source: dict) -> Path:
+    digest = hashlib.sha256(
+        source["url"].encode("utf-8")
+    ).hexdigest()[:16]
+    return CACHE_DIR / f"{source['name']}-{digest}.json"
+
+
+def _fetch(source: dict, use_cache: bool = True) -> list[dict]:
+    cache_file = _cache_file(source)
+
+    if use_cache and cache_file.exists():
+        age = time.time() - cache_file.stat().st_mtime
+
+        if age < CACHE_TTL_SECONDS:
+            try:
+                cached = json.loads(
+                    cache_file.read_text(encoding="utf-8")
+                )
+                if isinstance(cached, list) and cached:
+                    return cached
+            except (json.JSONDecodeError, OSError):
+                pass
+
     try:
         response = requests.get(
             source["url"],
@@ -92,10 +124,29 @@ def _fetch(source: dict) -> list[dict]:
         response.raise_for_status()
         data = response.json()
     except (requests.RequestException, ValueError):
+        # Fall back to a stale cache if the network is unavailable.
+        if cache_file.exists():
+            try:
+                cached = json.loads(
+                    cache_file.read_text(encoding="utf-8")
+                )
+                if isinstance(cached, list):
+                    return cached
+            except (json.JSONDecodeError, OSError):
+                pass
+
         return []
 
     if not isinstance(data, list):
         return []
+
+    try:
+        CACHE_DIR.mkdir(parents=True, exist_ok=True)
+        cache_file.write_text(
+            json.dumps(data), encoding="utf-8"
+        )
+    except OSError:
+        pass
 
     normalized = []
 
@@ -345,12 +396,13 @@ def import_curated(
     profile=None,
     country: str = "India",
     limit: int = 200,
+    use_cache: bool = True,
 ) -> dict:
     """Fetch curated datasets and merge them into storage."""
     listings = []
 
     for source in SOURCES:
-        listings.extend(_fetch(source))
+        listings.extend(_fetch(source, use_cache=use_cache))
 
     if not listings:
         raise RuntimeError(

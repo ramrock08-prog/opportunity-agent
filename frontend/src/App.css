@@ -2539,3 +2539,140 @@
   font-weight: 600;
   text-transform: none;
 }
+
+/* --- Mobile navigation, pagination, and profile strength --- */
+
+.menu-button {
+  display: none;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border: 1px solid #e1e6f0;
+  border-radius: 9px;
+  background: #fff;
+  color: #47546b;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.sidebar-overlay {
+  display: none;
+}
+
+.apply-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.load-more {
+  display: block;
+  margin: 22px auto 0;
+  padding: 11px 18px;
+  border: 1px solid #d8d0fa;
+  border-radius: 9px;
+  background: #fff;
+  color: #5d47c8;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.load-more:hover {
+  background: #f6f3ff;
+}
+
+.application-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 13px;
+}
+
+.profile-strength {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 22px;
+  padding: 16px 18px;
+  border: 1px solid #e6eaf2;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.strength-ring {
+  width: 62px;
+  height: 62px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  font-size: 14px;
+  font-weight: 850;
+}
+
+.strength-ring.strong {
+  border: 4px solid #63c79a;
+  color: #21805a;
+}
+
+.strength-ring.medium {
+  border: 4px solid #f0c063;
+  color: #9a6b16;
+}
+
+.strength-ring.weak {
+  border: 4px solid #ef9a9a;
+  color: #a33d3d;
+}
+
+.strength-copy h3 {
+  margin: 4px 0 5px;
+  color: #24334c;
+  font-size: 15px;
+  letter-spacing: -0.3px;
+}
+
+.strength-copy p {
+  margin: 0;
+  color: #7c899d;
+  font-size: 11px;
+  line-height: 1.7;
+}
+
+.strength-copy strong {
+  color: #5d47c8;
+}
+
+@media (max-width: 900px) {
+  .sidebar {
+    transform: translateX(-100%);
+    transition: transform 200ms ease;
+    box-shadow: 20px 0 50px #0d162633;
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  .sidebar-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 4;
+    background: #0d162666;
+  }
+
+  .menu-button {
+    display: grid;
+  }
+
+  .main-content {
+    margin-left: 0 !important;
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+
+  .profile-strength {
+    align-items: flex-start;
+  }
+}

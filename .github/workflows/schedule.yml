@@ -86,6 +86,11 @@ jobs:
         run: |
           git config user.name "opportunity-agent-bot"
           git config user.email "opportunity-agent-bot@users.noreply.github.com"
+
+          # Keep the generated snapshot ahead of any concurrent commits.
+          git fetch origin "$GITHUB_REF_NAME"
+          git rebase -X ours "origin/$GITHUB_REF_NAME" || git rebase --abort
+
           git add opportunities.json
           git diff --staged --quiet || \
             git commit -m "chore: update opportunity snapshot [skip ci]"

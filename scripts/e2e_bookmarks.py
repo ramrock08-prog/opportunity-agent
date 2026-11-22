@@ -224,6 +224,9 @@ def _run_browser_test(original_bookmarks: list[str]) -> int:
         dialog.get_by_label("Application status").select_option(
             "applied"
         )
+        dialog.get_by_placeholder(
+            "Optional note, for example the date you applied"
+        ).fill("Applied via E2E")
         dialog.get_by_role(
             "button", name="Save status"
         ).click()
@@ -240,7 +243,20 @@ def _run_browser_test(original_bookmarks: list[str]) -> int:
         expect(
             page.locator(".opportunity-card", has_text=title)
         ).to_be_visible(timeout=10_000)
-        print("Application tracker and Applications view work.")
+
+        # Notes must persist when the drawer is reopened.
+        page.locator(
+            ".opportunity-card", has_text=title
+        ).locator(".details-button").click()
+        reopened = page.get_by_role("dialog")
+        expect(reopened).to_be_visible(timeout=10_000)
+        expect(
+            reopened.get_by_placeholder(
+                "Optional note, for example the date you applied"
+            )
+        ).to_have_value("Applied via E2E")
+        page.keyboard.press("Escape")
+        print("Application tracker, note persistence, and view work.")
 
         browser.close()
 

@@ -8,7 +8,7 @@
 Repository: <https://github.com/ramrock08-prog/opportunity-agent>  
 Live demo: <https://opportunity-agent-v39s.onrender.com>  
 CI: [all backend, frontend, and PostgreSQL jobs passing](https://github.com/ramrock08-prog/opportunity-agent/actions)  
-Last updated: **22 November 2026**
+Last updated: **23 November 2026**
 
 Opportunity Agent searches the web for internships, hackathons, jobs,
 scholarships, fellowships, competitions, and research programs; extracts
@@ -43,6 +43,8 @@ preserved and generalized in Opportunity Agent.
 - Deep internship/job search with official-career queries, directory
   filtering, and up to 10 Gemini extractions per run.
 - Candidate history so repeated searches keep finding new listings.
+- Curated datasets are cached for 24 hours (`CURATED_CACHE_HOURS`) to
+  avoid re-downloading 15 MB on every sync.
 - Gemini structured extraction with strict anti-hallucination rules.
 - Verbatim evidence snippets stored with each record.
 - Deadlines are only accepted when the source supports them.
@@ -80,6 +82,10 @@ preserved and generalized in Opportunity Agent.
 - Automatic internship/job discovery after the first profile save.
 - Profile editor for degree, branch, year, skills, interests, locations,
   remote preference, and categories.
+- **Load more** pagination so large result sets stay fast.
+- **Mobile navigation** with a collapsible sidebar.
+- **Profile-strength panel** with a completeness score and suggestions.
+- Application **status filter** and persistent application notes.
 - Loading, empty, error, and backend-offline states.
 - "Explore opportunities" smoothly scrolls to the results workspace.
 
@@ -213,6 +219,7 @@ $env:SERVE_FRONTEND = "1"
 | `AUTH_DEV_SHOW_TOKENS` | Expose dev verification/reset tokens | `0` |
 | `AUTH_SECRET` | JWT signing secret | dev fallback |
 | `AUTH_TOKEN_MINUTES` | Session lifetime | `10080` (7 days) |
+| `CURATED_CACHE_HOURS` | Curated dataset cache lifetime | `24` |
 | `RATE_LIMIT_ENABLED` | Database-backed abuse protection | `1` |
 | `TRUST_PROXY` | Trust `X-Forwarded-For` behind a proxy | `0` |
 | `SENDER_EMAIL` | Account/digest sender | optional |

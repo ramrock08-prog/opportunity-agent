@@ -50,6 +50,7 @@ export default function OpportunityDetail({
   isSaved,
   isBusy,
   applicationStatus,
+  applicationNote,
   applicationBusy,
   profileSkills,
   related,
@@ -65,7 +66,9 @@ export default function OpportunityDetail({
   const [statusValue, setStatusValue] = useState(
     applicationStatus || ""
   );
-  const [statusNote, setStatusNote] = useState("");
+  const [statusNote, setStatusNote] = useState(
+    applicationNote || ""
+  );
   const [copied, setCopied] = useState(false);
 
   const requiredSkills = (item.required_skills || []).filter(Boolean);
@@ -531,6 +534,12 @@ export default function OpportunityDetail({
               type="button"
               className="apply-button"
               onClick={() => onApply(item)}
+              disabled={!applyUrl}
+              title={
+                applyUrl
+                  ? "Open the official application page"
+                  : "No application link available"
+              }
             >
               Apply
             </button>

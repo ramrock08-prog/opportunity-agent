@@ -127,7 +127,11 @@ def test_build_opportunity_maps_fields():
 def test_import_curated_merges_into_storage(
     isolated_db, monkeypatch
 ):
-    monkeypatch.setattr(curated, "_fetch", lambda source: SAMPLE)
+    monkeypatch.setattr(
+        curated,
+        "_fetch",
+        lambda source, use_cache=True: SAMPLE,
+    )
 
     stats = curated.import_curated(
         profile=Profile(), country="India", limit=10
